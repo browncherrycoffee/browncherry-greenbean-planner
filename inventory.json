@@ -1,0 +1,24 @@
+{
+  "updatedAt": "2026-11-10 21:30",
+  "updatedNote": "프롬프트 실시간 공장 창고 재고 연동 완료 (과테말라 3,000kg / 워시드 1,200kg / 내추럴 240kg)",
+  "stock": {
+    "stockGt": 3000,
+    "stockWashed": 1200,
+    "stockNatural": 240,
+    "stockIndia": 650,
+    "stockDecaf": 60,
+    "stockBrazil": 300
+  },
+  "demand": {
+    "targetMonths": 7.67,
+    "growthPct": 0,
+    "yieldRate": 0.80,
+    "kkosupOthers": 822.3,
+    "laplataKkosup": 250.0,
+    "b2cKkosup": 0.0,
+    "dark": 248.0,
+    "decaf": 171.0,
+    "washed": 131.7,
+    "natural": 62.7
+  }
+}

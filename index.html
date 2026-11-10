@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>브라운체리 생두 재고 & 구매 시뮬레이터</title>
-  <meta name="description" content="브라운체리(Brown Cherry) 스페셜티 커피 로스터리 원재료(생두) 재고 소진 예측 및 추가 확보량 실시간 시뮬레이션 대시보드" />
+  <title>브라운체리 생두 재고 & 발주 타이밍 시뮬레이터</title>
+  <meta name="description" content="브라운체리(Brown Cherry) 스페셜티 커피 로스터리 실시간 공장 창고 재고 연동, 주기적 발주 타이밍(인도·디카페인) 및 생두 추가 확보량 시뮬레이션 대시보드" />
   <meta name="theme-color" content="#2b1810" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,6 @@
     * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
     body { background-color: #f8f6f3; color: #1c1917; }
     
-    /* Custom Touch-Friendly Range Sliders */
     input[type=range] {
       -webkit-appearance: none;
       appearance: none;
@@ -42,20 +41,12 @@
       transform: scale(1.12);
       background: #9a3412;
     }
-    input[type=range].slider-emerald::-webkit-slider-thumb {
-      background: #047857;
-    }
-    input[type=range].slider-amber::-webkit-slider-thumb {
-      background: #b45309;
-    }
-    input[type=range].slider-indigo::-webkit-slider-thumb {
-      background: #3730a3;
-    }
+    input[type=range].slider-emerald::-webkit-slider-thumb { background: #047857; }
+    input[type=range].slider-amber::-webkit-slider-thumb { background: #b45309; }
+    input[type=range].slider-indigo::-webkit-slider-thumb { background: #3730a3; }
     .card-shadow {
       box-shadow: 0 4px 20px -2px rgba(43, 24, 16, 0.06), 0 2px 6px -1px rgba(43, 24, 16, 0.04);
     }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -68,24 +59,27 @@
           BC
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-amber-50">브라운체리 생두 구매 시뮬레이터</h1>
-            <span class="hidden sm:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">실시간 연동</span>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-amber-50">브라운체리 생두 재고 & 발주 시뮬레이터</h1>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="syncStatusText">공장 창고 재고 실시간 연동중</span>
+            </span>
           </div>
-          <p class="text-xs text-amber-200/80" id="headerSubtitle">2026.11.10 현재고 기준 → 2027.06.30(내년 6월 말) 목표</p>
+          <p class="text-xs text-amber-200/80" id="headerSubtitle">프롬프트 업데이트 시 전 기기(모바일/PC/아내분 폰) 자동 반영</p>
         </div>
       </div>
 
-      <!-- Action Buttons (Mobile & Desktop) -->
+      <!-- Action Buttons -->
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button onclick="shareCurrentState()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition">
-          <span>🔗</span><span>시뮬레이션 링크 복사</span>
+        <button onclick="fetchServerInventory(true)" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white font-semibold text-xs flex items-center gap-1 shadow transition" title="서버에 등록된 최신 공장 창고 재고 불러오기">
+          <span>🏭</span><span>창고 최신재고 동기화</span>
         </button>
-        <button onclick="saveToLocal()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 active:scale-95 text-amber-100 font-semibold text-xs border border-stone-600 transition">
-          <span>💾</span><span class="hidden sm:inline"> 설정</span><span> 저장</span>
+        <button onclick="shareCurrentState()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-semibold text-xs flex items-center gap-1 shadow transition">
+          <span>🔗</span><span>카톡 링크 공유</span>
         </button>
-        <button onclick="resetToDefault()" class="px-2.5 py-1.5 rounded-lg bg-stone-800/80 hover:bg-red-950 text-stone-300 hover:text-red-200 font-medium text-xs border border-stone-700 transition" title="초기 권장값으로 복원">
-          🔄 초기화
+        <button onclick="saveToLocal()" class="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 active:scale-95 text-amber-100 font-semibold text-xs border border-stone-600 transition">
+          💾 저장
         </button>
       </div>
     </div>
@@ -103,7 +97,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div class="flex items-center gap-2">
           <span class="w-2 h-5 rounded-full bg-amber-700"></span>
-          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">핵심 생두 추가 확보량 실시간 요약</h2>
+          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">1. 핵심 생두 추가 확보량 & 창고 재고 요약</h2>
         </div>
         <div class="text-xs font-medium text-stone-600 bg-white px-3 py-1 rounded-full border border-stone-200 shadow-sm">
           목표 기간: <strong class="text-amber-900 font-bold" id="badgeTargetMonths">7.67개월 (내년 6월 말)</strong> · 수율 <strong class="text-amber-900" id="badgeYield">80% (÷0.8)</strong>
@@ -112,10 +106,10 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         
-        <!-- Card 1: Guatemala (Primary Focus) -->
+        <!-- Card 1: Guatemala -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 border-2 border-amber-700/80 card-shadow relative overflow-hidden">
           <div class="absolute top-0 right-0 bg-amber-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-bl-xl">
-            ★ 최우선 관리 (꼬숩 60.6%)
+            ★ 최우선 확보 (꼬숩 60.6%)
           </div>
           <div class="text-xs font-bold text-amber-800 uppercase tracking-wider">과테말라 (Guatemala)</div>
           <div class="mt-2 flex items-baseline gap-2">
@@ -127,7 +121,6 @@
             <span class="text-sm font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md" id="kpiGtBags">46.8백 (69kg백)</span>
           </div>
 
-          <!-- Progress Bar -->
           <div class="mt-3.5">
             <div class="flex justify-between text-[11px] font-semibold mb-1">
               <span class="text-emerald-700" id="kpiGtStockLabel">현재고 3,000kg (3.7개월분)</span>
@@ -139,12 +132,12 @@
             </div>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-stone-500">
               <span>월 소요: <strong class="text-stone-800" id="kpiGtMonthly">812.2 kg/월</strong></span>
-              <span id="kpiGtRunwayDate" class="font-bold text-red-700">소진 예상: 27년 3월 초</span>
+              <span id="kpiGtRunwayDate" class="font-bold text-red-700">소진: 27년 3월 초</span>
             </div>
           </div>
         </div>
 
-        <!-- Card 2: Ethiopia Natural (Early Depletion Alert) -->
+        <!-- Card 2: Ethiopia Natural -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 border border-red-300 card-shadow relative overflow-hidden">
           <div class="absolute top-0 right-0 text-white text-[11px] font-bold px-2.5 py-1 rounded-bl-xl bg-red-600" id="kpiEthNBadge">
             ⚠️ 조기 소진 주의
@@ -170,12 +163,12 @@
             </div>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-stone-500">
               <span>월 소요: <strong class="text-stone-800" id="kpiEthNMonthly">78.3 kg/월</strong></span>
-              <span id="kpiEthNRunwayDate" class="font-bold text-red-700">소진 예상: 27년 2월 초</span>
+              <span id="kpiEthNRunwayDate" class="font-bold text-red-700">소진: 27년 2월 초</span>
             </div>
           </div>
         </div>
 
-        <!-- Card 3: Ethiopia Washed (Sufficient Stock) -->
+        <!-- Card 3: Ethiopia Washed -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 card-shadow relative overflow-hidden">
           <div class="absolute top-0 right-0 text-white text-[11px] font-bold px-2.5 py-1 rounded-bl-xl bg-emerald-700" id="kpiEthWBadge">
             🟢 현재고 여유
@@ -201,49 +194,49 @@
             </div>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-stone-500">
               <span>월 소요: <strong class="text-stone-800" id="kpiEthWMonthly">164.6 kg/월</strong></span>
-              <span id="kpiEthWRunwayDate" class="font-bold text-emerald-800">소진 예상: 27년 6월 중순</span>
+              <span id="kpiEthWRunwayDate" class="font-bold text-emerald-800">소진: 27년 6월 중순</span>
             </div>
           </div>
         </div>
 
-        <!-- Card 4: Rolling Purchase Items (India, Decaf, Brazil) -->
+        <!-- Card 4: Periodic / Rolling Items Summary -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 card-shadow flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-stone-700 uppercase tracking-wider">수시/롤링 구매 3종 요약</span>
-              <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-stone-100 text-stone-600">정기 발주</span>
+              <span class="text-xs font-bold text-stone-700 uppercase tracking-wider">주기적 구매 품목 발주 현황</span>
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900">타이밍 자동계산</span>
             </div>
             <div class="mt-3 space-y-2.5 text-xs">
-              <div class="p-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+              <div class="p-2 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between">
                 <div>
-                  <div class="font-bold text-stone-900">인도 합산 <span class="text-[11px] font-normal text-stone-500">(꼬숩+다크)</span></div>
-                  <div class="text-[11px] text-stone-500">잔여 1/3 시점마다 1톤 구매</div>
+                  <div class="font-bold text-stone-900">인도 합산 <span class="text-[11px] font-normal text-stone-500">(현재고 <span id="kpiIndiaCurStock">650</span>kg)</span></div>
+                  <div class="text-[11px] font-semibold text-amber-800" id="kpiIndiaNextOrder">발주선(333kg)까지 D-13일</div>
                 </div>
                 <div class="text-right">
                   <div class="font-extrabold text-sm text-amber-900" id="kpiIndiaMonthly">716.0 kg/월</div>
-                  <div class="text-[11px] font-semibold text-stone-600" id="kpiIndiaTotal">기간 총 5,492kg</div>
+                  <div class="text-[11px] text-stone-500" id="kpiIndiaDaily">일 23.5kg 소모</div>
                 </div>
               </div>
 
-              <div class="p-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+              <div class="p-2 rounded-xl bg-indigo-50/70 border border-indigo-200/80 flex items-center justify-between">
                 <div>
-                  <div class="font-bold text-stone-900">디카페인 <span class="text-[11px] font-normal text-stone-500">(20kg 주별구매)</span></div>
-                  <div class="text-[11px] text-stone-500" id="kpiDecafWeeklyBoxes">주 평균 2.5개 (49.3kg/주)</div>
+                  <div class="font-bold text-stone-900">디카페인 <span class="text-[11px] font-normal text-stone-500">(현재고 <span id="kpiDecafCurStock">60</span>kg)</span></div>
+                  <div class="text-[11px] font-semibold text-indigo-800" id="kpiDecafWeeklyBoxes">주 2.5개(50kg) · 8.5일분 보유</div>
                 </div>
                 <div class="text-right">
                   <div class="font-extrabold text-sm text-indigo-900" id="kpiDecafMonthly">213.8 kg/월</div>
-                  <div class="text-[11px] font-semibold text-indigo-700" id="kpiDecafMonthlyBoxes">월 약 10.7개(20kg)</div>
+                  <div class="text-[11px] font-semibold text-indigo-700" id="kpiDecafMonthlyBoxes">월 11개(220kg)</div>
                 </div>
               </div>
 
               <div class="p-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
                 <div>
                   <div class="font-bold text-stone-900">브라질 <span class="text-[11px] font-normal text-stone-500">(다크 39.4%)</span></div>
-                  <div class="text-[11px] text-stone-500" id="kpiBrazilStockNote">현재고 0kg 차감 후</div>
+                  <div class="text-[11px] text-stone-500" id="kpiBrazilStockNote">현재고 300kg (2.5개월분)</div>
                 </div>
                 <div class="text-right">
-                  <div class="font-extrabold text-sm text-stone-900" id="kpiBrazilAdd">추가 937 kg</div>
-                  <div class="text-[11px] font-semibold text-stone-600" id="kpiBrazilMonthly">월 122.2kg (15.6백)</div>
+                  <div class="font-extrabold text-sm text-stone-900" id="kpiBrazilAdd">추가 637 kg</div>
+                  <div class="text-[11px] font-semibold text-stone-600" id="kpiBrazilMonthly">월 122.2kg (10.6백)</div>
                 </div>
               </div>
             </div>
@@ -253,14 +246,168 @@
       </div>
     </section>
 
-    <!-- 2. INTERACTIVE SIMULATION CONTROL PANEL (SLIDERS) -->
+    <!-- 2. NEW! PERIODIC PURCHASE TIMING TRACKER (INDIA & DECAF & ALL BEANS) -->
+    <section class="bg-white rounded-2xl border-2 border-amber-800/30 card-shadow overflow-hidden">
+      <div class="bg-gradient-to-r from-amber-900 via-[#3b2114] to-stone-900 px-4 sm:px-6 py-3.5 text-white flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">⏰</span>
+          <div>
+            <h2 class="text-sm sm:text-base font-extrabold">2. 주기적 구매 품목 (인도 · 디카페인) 발주 타이밍 & D-Day 트래커</h2>
+            <p class="text-[11px] text-amber-200/90">월 예상 출고량을 바탕으로 하루/주간 소모 속도와 정확한 다음 발주 타이밍(날짜·수량)을 실시간 계산합니다.</p>
+          </div>
+        </div>
+        <span class="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30">
+          출고량 슬라이더 연동
+        </span>
+      </div>
+
+      <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- Left Box: INDIA (1 Ton Monthly Rolling, Reorder at 1/3 = 333kg) -->
+        <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span class="inline-block text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-200 text-amber-950 mb-1">매월 1톤 구매 기회 · 잔여 1/3 발주 규칙</span>
+              <h3 class="text-base font-extrabold text-stone-900">🇮🇳 인도 생두 (꼬숩 39.4% + 다크초코 60.6%) 발주 타이밍</h3>
+            </div>
+            <div id="indiaStatusBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600 text-white shadow-sm">
+              🟢 발주 여유 (D-13일)
+            </div>
+          </div>
+
+          <!-- Consumption Velocity Metrics -->
+          <div class="grid grid-cols-3 gap-2 text-center bg-white p-3 rounded-xl border border-amber-200/80">
+            <div>
+              <div class="text-[11px] text-stone-500">월 생두 소요량</div>
+              <div class="text-sm sm:text-base font-extrabold text-stone-900" id="indiaVelMonthly">716.0 kg/월</div>
+              <div class="text-[10px] text-stone-400" id="indiaVelSplit">꼬숩 528 + 다크 188</div>
+            </div>
+            <div class="border-x border-stone-100">
+              <div class="text-[11px] text-stone-500">하루 / 주간 소모량</div>
+              <div class="text-sm sm:text-base font-extrabold text-amber-900" id="indiaVelDaily">23.5 kg/일</div>
+              <div class="text-[10px] text-stone-500" id="indiaVelWeekly">주 165.2 kg 소모</div>
+            </div>
+            <div>
+              <div class="text-[11px] text-stone-500">1톤(1,000kg) 구매 시</div>
+              <div class="text-sm sm:text-base font-extrabold text-emerald-800" id="india1TonDays">총 42.5일 사용</div>
+              <div class="text-[10px] font-semibold text-amber-800" id="india2ThirdsDays">2/3 소진(발주선): 28.3일</div>
+            </div>
+          </div>
+
+          <!-- Current India Stock Slider for Timing Check -->
+          <div class="bg-white p-3.5 rounded-xl border border-amber-200 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-extrabold text-stone-800">🏭 현재 창고 인도 생두 재고량</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="numStockIndiaTop" step="20" min="0" max="3000" value="650"
+                  oninput="syncFromInput('stockIndia', this.value)"
+                  class="w-24 text-right font-extrabold text-sm px-2 py-1 rounded-lg border-2 border-amber-500 bg-amber-50/50 text-stone-900" />
+                <span class="text-xs font-bold text-stone-700">kg</span>
+              </div>
+            </div>
+            <input type="range" id="rngStockIndiaTop" class="slider-amber" min="0" max="1500" step="10" value="650"
+              oninput="syncFromSlider('stockIndia', this.value)" />
+            <div class="flex flex-wrap gap-1.5 pt-0.5">
+              <button onclick="setStock('stockIndia', 1000)" class="px-2 py-1 text-[11px] font-bold rounded bg-amber-100 text-amber-900 hover:bg-amber-200">1톤 방금 입고 (1,000kg)</button>
+              <button onclick="setStock('stockIndia', 650)" class="px-2 py-1 text-[11px] font-semibold rounded bg-stone-100 text-stone-700 hover:bg-stone-200">650kg</button>
+              <button onclick="setStock('stockIndia', 500)" class="px-2 py-1 text-[11px] font-semibold rounded bg-stone-100 text-stone-700 hover:bg-stone-200">절반 (500kg)</button>
+              <button onclick="setStock('stockIndia', 333)" class="px-2 py-1 text-[11px] font-bold rounded bg-red-100 text-red-800 hover:bg-red-200">⚠️ 1/3 발주선 (333kg)</button>
+              <button onclick=" adjustStock('stockIndia', -60)" class="ml-auto px-2 py-1 text-[11px] font-semibold rounded bg-stone-100 text-stone-700">-1백(60kg)</button>
+            </div>
+          </div>
+
+          <!-- Visual Gauge for India 1,000kg & 333kg Reorder Point -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] font-bold">
+              <span class="text-red-700">🎯 1/3 발주 기준선: 333 kg (남은 재고 14일분)</span>
+              <span class="text-stone-700" id="indiaGaugeLabel">현재 650 kg / 1,000 kg</span>
+            </div>
+            <div class="relative w-full h-4 bg-stone-200 rounded-full overflow-hidden">
+              <!-- 1/3 Marker Line at 33.3% -->
+              <div class="absolute top-0 bottom-0 left-[33.3%] w-0.5 bg-red-600 z-10"></div>
+              <div id="indiaGaugeBar" class="h-full bg-amber-600 transition-all duration-200" style="width: 65%"></div>
+            </div>
+            <div id="indiaActionCallout" class="p-3 rounded-xl bg-white border-l-4 border-amber-600 text-xs space-y-1 shadow-sm">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Box: DECAF (20kg Weekly Purchase Timing & Box Calculator) -->
+        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span class="inline-block text-[11px] font-extrabold px-2 py-0.5 rounded bg-indigo-200 text-indigo-950 mb-1">20kg 단위 주별 구매 품목</span>
+              <h3 class="text-base font-extrabold text-stone-900">☕ 디카페인 생두 (싱글 100%) 주간 발주 타이밍</h3>
+            </div>
+            <div id="decafStatusBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-700 text-white shadow-sm">
+              주 2~3개 (20kg 단위)
+            </div>
+          </div>
+
+          <!-- Decaf Velocity Metrics -->
+          <div class="grid grid-cols-3 gap-2 text-center bg-white p-3 rounded-xl border border-indigo-200/80">
+            <div>
+              <div class="text-[11px] text-stone-500">주간 필요 생두량</div>
+              <div class="text-sm sm:text-base font-extrabold text-indigo-950" id="decafVelWeekly">49.3 kg/주</div>
+              <div class="text-[10px] font-bold text-indigo-700" id="decafVelWeeklyUnits">주 평균 2.5개 (20kg)</div>
+            </div>
+            <div class="border-x border-stone-100">
+              <div class="text-[11px] text-stone-500">20kg 1개 소진 기간</div>
+              <div class="text-sm sm:text-base font-extrabold text-amber-900" id="decafOneBoxDays">2.8일마다 1개</div>
+              <div class="text-[10px] text-stone-500" id="decafVelDaily">하루 7.0 kg 소모</div>
+            </div>
+            <div>
+              <div class="text-[11px] text-stone-500">월간 총 구매 수량</div>
+              <div class="text-sm sm:text-base font-extrabold text-emerald-800" id="decafMonthUnits">월 10.7개 (11개)</div>
+              <div class="text-[10px] text-stone-500" id="decafMonthKg">월 213.8 kg 소요</div>
+            </div>
+          </div>
+
+          <!-- Current Decaf Stock Slider -->
+          <div class="bg-white p-3.5 rounded-xl border border-indigo-200 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-extrabold text-stone-800">🏭 현재 창고 디카페인 생두 재고량</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="numStockDecafTop" step="10" min="0" max="500" value="60"
+                  oninput="syncFromInput('stockDecaf', this.value)"
+                  class="w-24 text-right font-extrabold text-sm px-2 py-1 rounded-lg border-2 border-indigo-500 bg-indigo-50/40 text-stone-900" />
+                <span class="text-xs font-bold text-stone-700">kg</span>
+              </div>
+            </div>
+            <input type="range" id="rngStockDecafTop" class="slider-indigo" min="0" max="200" step="5" value="60"
+              oninput="syncFromSlider('stockDecaf', this.value)" />
+            <div class="flex flex-wrap gap-1.5 pt-0.5">
+              <button onclick="adjustStock('stockDecaf', -20)" class="px-2 py-1 text-[11px] font-bold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">-1개 (-20kg)</button>
+              <button onclick="adjustStock('stockDecaf', 20)" class="px-2 py-1 text-[11px] font-bold rounded bg-indigo-100 hover:bg-indigo-200 text-indigo-900">+1개 (+20kg)</button>
+              <button onclick="adjustStock('stockDecaf', 40)" class="px-2 py-1 text-[11px] font-bold rounded bg-indigo-100 hover:bg-indigo-200 text-indigo-900">+2개 (+40kg)</button>
+              <button onclick="adjustStock('stockDecaf', 60)" class="px-2 py-1 text-[11px] font-bold rounded bg-indigo-100 hover:bg-indigo-200 text-indigo-900">+3개 (+60kg)</button>
+              <button onclick="setStock('stockDecaf', 60)" class="ml-auto px-2 py-1 text-[11px] font-semibold rounded bg-stone-100 text-stone-600">60kg(3개)</button>
+            </div>
+          </div>
+
+          <!-- Decaf Weekly Schedule Guide & Next Order Callout -->
+          <div class="space-y-2">
+            <div id="decafActionCallout" class="p-3 rounded-xl bg-white border-l-4 border-indigo-600 text-xs space-y-1 shadow-sm">
+              <!-- Populated by JS -->
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 text-center text-[11px]" id="decaf4WeekPlan">
+              <!-- 4-week recommended buying pattern populated by JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. INTERACTIVE SIMULATION CONTROL PANEL (SLIDERS) -->
     <section class="bg-white rounded-2xl border border-stone-200/90 card-shadow overflow-hidden">
       <div class="bg-gradient-to-r from-[#2b1810] to-[#432818] px-4 sm:px-6 py-3.5 text-white flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="text-lg">🎛️</span>
           <div>
-            <h2 class="text-sm sm:text-base font-extrabold">실시간 시뮬레이션 컨트롤 바 (슬라이더 조절)</h2>
-            <p class="text-[11px] text-amber-200/80">바를 좌우로 움직이거나 숫자를 입력하면 확보해야 할 생두량이 즉시 재계산됩니다.</p>
+            <h2 class="text-sm sm:text-base font-extrabold">3. 실시간 시뮬레이션 컨트롤 바 (출고량 · 목표기간 · 창고재고 조절)</h2>
+            <p class="text-[11px] text-amber-200/80">상황 변화에 따라 슬라이더 바를 움직이면 발주 타이밍과 필요 생두량이 동시에 바뀝니다.</p>
           </div>
         </div>
         <!-- Quick Scenario Preset Buttons -->
@@ -345,7 +492,7 @@
               <span class="text-[11px] text-stone-500">라플라타 공사 공백 정상화 반영 완료</span>
             </div>
 
-            <!-- 1) Kkosup (Split into Others + La Plata + B2C) -->
+            <!-- 1) Kkosup -->
             <div class="p-3 rounded-xl bg-white border border-stone-200/90 space-y-3">
               <div class="flex flex-wrap items-center justify-between gap-1">
                 <div>
@@ -358,7 +505,6 @@
                 </div>
               </div>
 
-              <!-- Kkosup Base (Excluding La Plata) -->
               <div>
                 <div class="flex justify-between text-xs font-semibold text-stone-700 mb-1">
                   <span>· 일반 B2B 거래처 합계 <span class="text-stone-400 font-normal">(라플라타 외 19개점)</span></span>
@@ -373,7 +519,6 @@
                   oninput="syncFromSlider('kkosupOthers', this.value)" />
               </div>
 
-              <!-- La Plata Monthly Output Slider -->
               <div class="pt-2 border-t border-stone-100">
                 <div class="flex justify-between text-xs font-semibold text-amber-900 mb-1">
                   <span>· ★ 라플라타 월평균 출고량 <span class="text-stone-500 font-normal">(리모델링 완료 정상화 기준)</span></span>
@@ -393,7 +538,6 @@
                 </div>
               </div>
 
-              <!-- B2C Additional Kkosup Slider -->
               <div class="pt-2 border-t border-stone-100">
                 <div class="flex justify-between text-xs font-semibold text-stone-700 mb-1">
                   <span>· B2C (온라인+오프라인 매장 소매) 추가분</span>
@@ -412,7 +556,6 @@
             <!-- 2) Dark Choco, Decaf, Washed, Natural Sliders -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               
-              <!-- Dark Choco -->
               <div class="p-3 rounded-xl bg-white border border-stone-200/90">
                 <div class="flex justify-between items-center mb-1">
                   <span class="text-xs font-extrabold text-stone-800">② 다크초코 (원두)</span>
@@ -428,7 +571,6 @@
                   oninput="syncFromSlider('dark', this.value)" />
               </div>
 
-              <!-- Decaf -->
               <div class="p-3 rounded-xl bg-white border border-stone-200/90">
                 <div class="flex justify-between items-center mb-1">
                   <span class="text-xs font-extrabold text-stone-800">③ 디카페인 (원두)</span>
@@ -444,7 +586,6 @@
                   oninput="syncFromSlider('decaf', this.value)" />
               </div>
 
-              <!-- Ethiopia Washed -->
               <div class="p-3 rounded-xl bg-white border border-stone-200/90">
                 <div class="flex justify-between items-center mb-1">
                   <span class="text-xs font-extrabold text-emerald-900">④ 산미 - 에티 워시드 (원두)</span>
@@ -460,7 +601,6 @@
                   oninput="syncFromSlider('washed', this.value)" />
               </div>
 
-              <!-- Ethiopia Natural -->
               <div class="p-3 rounded-xl bg-white border border-stone-200/90">
                 <div class="flex justify-between items-center mb-1">
                   <span class="text-xs font-extrabold text-red-900">⑤ 산미 - 에티 내추럴 (원두)</span>
@@ -486,8 +626,8 @@
           
           <div class="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/90 space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wide">STEP 3. 현재 보유 생두 재고량 설정 (kg)</span>
-              <span class="text-[11px] font-semibold text-emerald-800">창고 실사 재고 즉시 반영</span>
+              <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wide">STEP 3. 공장 창고 보유 생두 재고량 (kg)</span>
+              <span class="text-[11px] font-semibold text-emerald-800" id="lblWarehouseUpdated">실시간 연동중</span>
             </div>
 
             <!-- Stock 1: Guatemala -->
@@ -561,18 +701,24 @@
               </div>
             </div>
 
-            <!-- Stock 4: Brazil & India Optional Stock -->
-            <div class="grid grid-cols-2 gap-2.5">
-              <div class="p-2.5 rounded-xl bg-white border border-stone-200">
-                <label class="block text-[11px] font-bold text-stone-700 mb-1">브라질 현재 재고(kg)</label>
-                <input type="number" id="numStockBrazil" step="30" min="0" max="5000" value="0"
-                  oninput="syncFromInput('stockBrazil', this.value)"
+            <!-- Stock 4: Brazil & India & Decaf -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="p-2 rounded-xl bg-white border border-stone-200">
+                <label class="block text-[11px] font-bold text-stone-700 mb-1">인도 재고(kg)</label>
+                <input type="number" id="numStockIndia" step="20" min="0" max="5000" value="650"
+                  oninput="syncFromInput('stockIndia', this.value)"
                   class="w-full text-right font-bold text-xs px-2 py-1 rounded border border-stone-300" />
               </div>
-              <div class="p-2.5 rounded-xl bg-white border border-stone-200">
-                <label class="block text-[11px] font-bold text-stone-700 mb-1">인도 현재 재고(kg)</label>
-                <input type="number" id="numStockIndia" step="50" min="0" max="5000" value="0"
-                  oninput="syncFromInput('stockIndia', this.value)"
+              <div class="p-2 rounded-xl bg-white border border-stone-200">
+                <label class="block text-[11px] font-bold text-stone-700 mb-1">디카페인 재고(kg)</label>
+                <input type="number" id="numStockDecaf" step="10" min="0" max="1000" value="60"
+                  oninput="syncFromInput('stockDecaf', this.value)"
+                  class="w-full text-right font-bold text-xs px-2 py-1 rounded border border-stone-300" />
+              </div>
+              <div class="p-2 rounded-xl bg-white border border-stone-200">
+                <label class="block text-[11px] font-bold text-stone-700 mb-1">브라질 재고(kg)</label>
+                <input type="number" id="numStockBrazil" step="30" min="0" max="5000" value="300"
+                  oninput="syncFromInput('stockBrazil', this.value)"
                   class="w-full text-right font-bold text-xs px-2 py-1 rounded border border-stone-300" />
               </div>
             </div>
@@ -599,11 +745,11 @@
       </div>
     </section>
 
-    <!-- 3. VISUAL TIMELINE & FULL PROCUREMENT TABLE -->
+    <!-- 4. VISUAL TIMELINE & FULL PROCUREMENT TABLE -->
     <section class="bg-white rounded-2xl border border-stone-200 card-shadow p-4 sm:p-6 space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">📊 품목별 재고 소진 타임라인 & 전체 원재료 확보 산출표</h2>
+          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">4. 품목별 재고 소진 타임라인 & 전체 원재료 확보 산출표</h2>
           <p class="text-xs text-stone-500">초록색 바는 현재 보유 재고로 버틸 수 있는 개월 수이며, 주황/빨간색 바는 목표 기간까지 추가로 구매해야 하는 물량입니다.</p>
         </div>
       </div>
@@ -613,16 +759,16 @@
         <!-- Populated dynamically by JS -->
       </div>
 
-      <!-- Full Summary Table (Mobile Scrollable) -->
+      <!-- Full Summary Table -->
       <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-        <table class="w-full text-left border-collapse min-w-[780px]">
+        <table class="w-full text-left border-collapse min-w-[820px]">
           <thead>
             <tr class="bg-stone-900 text-amber-50 text-xs uppercase">
               <th class="py-3 px-3 rounded-tl-xl">생두 품목 (원산지)</th>
               <th class="py-3 px-3">투입 블렌드 / 비중</th>
-              <th class="py-3 px-3 text-right">월 예상 생두 소요량</th>
-              <th class="py-3 px-3 text-right">현재 보유 재고</th>
-              <th class="py-3 px-3 text-center">현재고 소진 시점</th>
+              <th class="py-3 px-3 text-right">월 / 일 생두 소요량</th>
+              <th class="py-3 px-3 text-right">창고 보유 재고</th>
+              <th class="py-3 px-3 text-center">발주 타이밍 / 소진일</th>
               <th class="py-3 px-3 text-right" id="thTargetNeed">목표 기간 총 필요량</th>
               <th class="py-3 px-3 text-right bg-amber-900/60 font-extrabold">순수 추가 확보 필요량</th>
               <th class="py-3 px-3 text-right rounded-tr-xl">발주 마대/단위 환산</th>
@@ -635,14 +781,13 @@
       </div>
     </section>
 
-    <!-- 4. HISTORICAL B2B CLIENT DATA EXPLORER (2026.01 ~ 2026.08) -->
+    <!-- 5. HISTORICAL B2B CLIENT DATA EXPLORER (2026.01 ~ 2026.08) -->
     <section class="bg-white rounded-2xl border border-stone-200 card-shadow p-4 sm:p-6 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">📋 2026년 1월 ~ 8월 거래처별 B2B 원두 공급 실적 데이터</h2>
+          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">5. 2026년 1월 ~ 8월 거래처별 B2B 원두 공급 실적 데이터</h2>
           <p class="text-xs text-stone-500">엑셀 원본 데이터(2026.01~08) 및 거래처별 월평균·최근 추세를 품목별로 확인할 수 있습니다.</p>
         </div>
-        <!-- Category Tabs -->
         <div class="flex flex-wrap gap-1.5" id="clientTabButtons">
           <button onclick="switchClientTab('kkosup')" id="tab_kkosup" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-800 text-white shadow">꼬숩 (20곳)</button>
           <button onclick="switchClientTab('dark')" id="tab_dark" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">다크초코 (5곳)</button>
@@ -680,63 +825,90 @@
   </main>
 
   <script>
-    // Embedded B2B Historical Data (2026.01 ~ 2026.08)
     const B2B_DATA = {"kkosup": [{"name": "SM월배", "m26": [170.0, 90.0, 140.0, 120.0, 120.0, 110.0, 100.0, 120.0], "m25": [150.0, 130.0, 150.0, 180.0, 100.0, 140.0, 150.0], "sum26": 970.0}, {"name": "SM복현", "m26": [80.0, 115.0, 130.0, 120.0, 100.0, 130.0, 100.0, 120.0], "m25": [110.0, 150.0, 120.0, 160.0, 80.0, 80.0, 120.0], "sum26": 895.0}, {"name": "SM화원", "m26": [80.0, 90.0, 90.0, 100.0, 80.0, 100.0, 80.0, 110.0], "m25": [80.0, 100.0, 90.0, 120.0, 70.0, 100.0, 100.0], "sum26": 730.0}, {"name": "라플라타", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 210.0, 240.0], "m25": [100.0, 200.0, 120.0, 310.0, 20.0, 100.0, 0.0], "sum26": 470.0}, {"name": "피터팬 본점", "m26": [10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 30.0, 10.0], "m25": [30.0, 20.0, 10.0, 30.0, 10.0, 10.0, 30.0], "sum26": 130.0}, {"name": "피터팬 연대점", "m26": [30.0, 100.0, 100.0, 190.0, 150.0, 90.0, 50.0, 80.0], "m25": [80.0, 50.0, 80.0, 150.0, 100.0, 130.0, 80.0], "sum26": 790.0}, {"name": "피터팬 원천점", "m26": [60.0, 105.0, 60.0, 90.0, 90.0, 60.0, 90.0, 60.0], "m25": [90.0, 60.0, 90.0, 60.0, 90.0, 70.0, 60.0], "sum26": 615.0}, {"name": "로아 한동대점", "m26": [0.0, 0.0, 150.0, 60.0, 60.0, 30.0, 0.0, 30.0], "m25": [50.0, 0.0, 50.0, 40.0, 90.0, 70.0, 80.0], "sum26": 330.0}, {"name": "로아 서초점", "m26": [0.0, 80.0, 80.0, 70.0, 80.0, 140.0, 140.0, 150.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0], "sum26": 740.0}, {"name": "일산 자이안카페", "m26": [30.0, 30.0, 20.0, 30.0, 30.0, 30.0, 30.0, 30.0], "m25": [30.0, 40.0, 23.0, 20.0, 20.0, 20.0, 30.0], "sum26": 230.0}, {"name": "코야커피", "m26": [10.0, 10.0, 5.0, 10.0, 10.0, 10.0, 0.0, 6.0], "m25": [20.0, 30.0, 20.0, 20.0, 20.0, 30.0, 20.0], "sum26": 61.0}, {"name": "보현산전망대", "m26": [20.0, 30.0, 20.0, 30.0, 30.0, 20.0, 30.0, 30.0], "m25": [20.0, 20.0, 30.0, 70.0, 10.0, 20.0, 30.0], "sum26": 210.0}, {"name": "고성무끼", "m26": [10.0, 25.0, 10.0, 15.0, 25.0, 20.0, 55.0, 60.0], "m25": [15.0, 50.0, 50.0, 40.0, 0.0, 10.0, 20.0], "sum26": 220.0}, {"name": "아마빌레", "m26": [20.0, 30.0, 30.0, 0.0, 30.0, 10.0, 20.0, 10.0], "m25": [20.0, 10.0, 20.0, 50.0, 0.0, 20.0, 30.0], "sum26": 150.0}, {"name": "포항 함께", "m26": [10.0, 10.0, 20.0, 10.0, 20.0, 0.0, 20.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 100.0}, {"name": "나온김에 커피한잔", "m26": [10.0, 5.0, 5.0, 5.0, 10.0, 10.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 65.0}, {"name": "대잠맨션(장성점)", "m26": [15.0, 10.0, 10.0, 7.0, 10.0, 10.0, 10.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 72.0}, {"name": "빈앤스타", "m26": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 80.0}, {"name": "하울", "m26": [6.0, 0.0, 7.0, 8.0, 18.0, 26.0, 13.0, 7.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 85.0}, {"name": "카페미소", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 10.0}], "dark": [{"name": "새라울", "m26": [70.0, 70.0, 60.0, 110.0, 70.0, 120.0, 70.0, 91.0], "m25": [60.0, 50.0, 80.0, 94.0, 70.0, 60.0, 70.0], "sum26": 661.0}, {"name": "일리노 달동점", "m26": [60.0, 60.0, 155.0, 60.0, 90.0, 60.0, 30.0, 30.0], "m25": [0.0, 40.0, 70.0, 90.0, 60.0, 40.0, 60.0], "sum26": 545.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 105.0, 105.0, 70.0, 35.0, 35.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 350.0}, {"name": "코야커피", "m26": [15.0, 10.0, 15.0, 20.0, 30.0, 25.0, 30.0, 35.0], "m25": [10.0, 10.0, 5.0, 10.0, 10.0, 15.0, 10.0], "sum26": 180.0}, {"name": "MBC 카페미아", "m26": [30.0, 38.0, 39.0, 34.0, 27.0, 37.0, 34.0, 42.0], "m25": [30.0, 30.0, 50.0, 35.0, 20.0, 30.0, 30.0], "sum26": 281.0}], "decaf": [{"name": "SM월배", "m26": [13.5, 15.0, 12.5, 11.0, 12.0, 14.5, 13.5, 13.5], "m25": [12.5, 11.0, 11.0, 19.5, 7.5, 10.0, 13.5], "sum26": 105.5}, {"name": "SM복현", "m26": [9.0, 9.0, 12.0, 8.0, 9.0, 12.0, 9.5, 10.5], "m25": [8.0, 10.0, 7.0, 12.0, 6.5, 7.0, 9.5], "sum26": 79.0}, {"name": "SM화원", "m26": [5.0, 5.0, 5.5, 6.0, 5.5, 8.0, 5.5, 7.0], "m25": [5.5, 7.0, 5.0, 8.5, 2.0, 5.0, 6.5], "sum26": 47.5}, {"name": "라플라타", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 30.0, 30.0], "m25": [0.0, 40.0, 10.0, 40.0, 0.0, 0.0, 0.0], "sum26": 61.0}, {"name": "피터팬 연대점", "m26": [4.0, 24.0, 15.0, 25.0, 20.0, 5.0, 10.0, 15.0], "m25": [10.0, 8.0, 14.0, 19.0, 14.0, 18.0, 6.0], "sum26": 118.0}, {"name": "피터팬 원천점", "m26": [10.0, 9.0, 20.0, 20.0, 10.0, 10.0, 10.0, 6.0], "m25": [7.5, 5.0, 10.5, 10.0, 8.5, 8.5, 10.0], "sum26": 95.0}, {"name": "새라울", "m26": [10.0, 15.0, 15.0, 20.0, 15.0, 25.0, 15.0, 20.0], "m25": [15.0, 10.0, 10.0, 30.0, 10.0, 5.0, 24.0], "sum26": 135.0}, {"name": "일리노 달동점", "m26": [10.0, 10.0, 30.0, 10.0, 20.0, 10.0, 10.0, 10.0], "m25": [0.0, 10.0, 25.0, 17.0, 10.0, 10.0, 10.0], "sum26": 110.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 30.0, 20.0, 20.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 90.0}, {"name": "로아 한동대점", "m26": [0.0, 0.0, 60.0, 0.0, 0.0, 10.0, 0.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 20.0], "sum26": 80.0}, {"name": "로아 서초점", "m26": [0.0, 5.0, 40.0, 0.0, 20.0, 20.0, 30.0, 40.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], "sum26": 155.0}, {"name": "일산 자이안카페", "m26": [2.0, 2.0, 2.0, 4.0, 4.0, 2.0, 4.0, 2.0], "m25": [2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 4.0], "sum26": 22.0}, {"name": "MBC 카페미아", "m26": [0.0, 5.0, 4.0, 6.0, 3.0, 5.0, 6.0, 3.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 32.0}, {"name": "보현산전망대", "m26": [1.0, 1.5, 1.0, 1.5, 2.0, 2.0, 1.5, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.5, 1.5, 1.0], "sum26": 11.5}, {"name": "포항 함께", "m26": [2.0, 0.0, 2.0, 0.0, 1.0, 0.0, 1.0, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 7.0}, {"name": "대잠맨션(장성점)", "m26": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 2.0}, {"name": "빈앤스타", "m26": [3.0, 0.0, 0.0, 1.5, 2.5, 1.5, 1.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 9.5}, {"name": "하울", "m26": [1.0, 0.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 4.5}], "washed": [{"name": "SM월배", "m26": [20.0, 20.0, 20.0, 20.0, 30.0, 30.0, 20.0, 20.0], "m25": [30.0, 20.0, 30.0, 30.0, 20.0, 20.0, 40.0], "sum26": 180.0}, {"name": "SM복현", "m26": [15.0, 15.0, 15.0, 17.5, 20.0, 25.0, 20.0, 25.0], "m25": [20.0, 27.5, 17.5, 27.5, 20.0, 15.0, 15.0], "sum26": 152.5}, {"name": "SM화원", "m26": [10.0, 15.0, 15.0, 10.0, 10.0, 20.0, 20.0, 10.0], "m25": [5.0, 24.0, 15.0, 25.0, 5.0, 10.0, 15.0], "sum26": 110.0}, {"name": "새라울", "m26": [15.0, 20.0, 25.0, 50.0, 35.0, 40.0, 20.0, 61.0], "m25": [15.0, 25.0, 10.0, 40.0, 10.0, 15.0, 20.0], "sum26": 266.0}, {"name": "일리노 달동점", "m26": [10.0, 10.0, 40.0, 10.0, 10.0, 20.0, 10.0, 10.0], "m25": [0.0, 10.0, 20.0, 20.0, 10.0, 10.0, 10.0], "sum26": 120.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 30.0, 10.0, 20.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 80.0}, {"name": "나온김에 커피한잔", "m26": [0.0, 0.0, 2.0, 0.0, 1.0, 2.0, 2.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 7.0}], "natural": [{"name": "피터팬 연대점", "m26": [2.0, 20.0, 15.0, 40.0, 20.0, 10.0, 5.0, 25.0], "m25": [18.0, 2.0, 22.0, 24.0, 22.0, 24.0, 12.0], "sum26": 137.0}, {"name": "피터팬 원천점", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 6.0}, {"name": "로아 한동대점", "m26": [0.0, 10.0, 40.0, 0.0, 10.0, 0.0, 0.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 0.0], "sum26": 70.0}, {"name": "로아 서초점", "m26": [10.0, 20.0, 30.0, 10.0, 20.0, 40.0, 50.0, 40.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0], "sum26": 220.0}, {"name": "포항 함께", "m26": [0.0, 1.0, 1.0, 0.0, 2.0, 0.0, 1.0, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 6.0}]};
+    const FALLBACK_INV = {"updatedAt": "2026-11-10 21:30", "updatedNote": "프롬프트 실시간 공장 창고 재고 연동 완료 (과테말라 3,000kg / 워시드 1,200kg / 내추럴 240kg)", "stock": {"stockGt": 3000, "stockWashed": 1200, "stockNatural": 240, "stockIndia": 650, "stockDecaf": 60, "stockBrazil": 300}, "demand": {"targetMonths": 7.67, "growthPct": 0, "yieldRate": 0.8, "kkosupOthers": 822.3, "laplataKkosup": 250.0, "b2cKkosup": 0.0, "dark": 248.0, "decaf": 171.0, "washed": 131.7, "natural": 62.7}};
 
-    // Ratio Constants (5,090g / 8,400g & 3,310g / 8,400g)
-    const RATIO_MAIN = 5090 / 8400; // 0.60595238 (60.60%)
-    const RATIO_SUB  = 3310 / 8400; // 0.39404762 (39.40%)
+    const RATIO_MAIN = 5090 / 8400; // 60.60%
+    const RATIO_SUB  = 3310 / 8400; // 39.40%
 
-    // Default Recommended State (Today 2026.11.10 -> 2027.06.30 = 7.67 months, Recent 3M Normalized)
     const DEFAULT_STATE = {
       targetMonths: 7.67,
       growthPct: 0,
       yieldRate: 0.80,
-      kkosupOthers: 822.3,   // Recent 3m avg of non-La Plata stores (826, 788, 853)
-      laplataKkosup: 250.0,  // Normalized La Plata monthly output
+      kkosupOthers: 822.3,
+      laplataKkosup: 250.0,
       b2cKkosup: 0.0,
-      dark: 248.0,           // Recent 3m avg (312, 199, 233)
-      decaf: 171.0,          // Recent 3m avg with La Plata 30kg normalized
-      washed: 131.7,         // Recent 3m avg (157, 102, 136)
-      natural: 62.7,         // Recent 3m avg (50, 62, 76)
+      dark: 248.0,
+      decaf: 171.0,
+      washed: 131.7,
+      natural: 62.7,
       stockGt: 3000,
       stockWashed: 1200,
       stockNatural: 240,
-      stockBrazil: 0,
-      stockIndia: 0,
+      stockIndia: 650,
+      stockDecaf: 60,
+      stockBrazil: 300,
       activeScenario: 'recent3',
       activeClientTab: 'kkosup'
     };
 
     let state = { ...DEFAULT_STATE };
 
-    // Load state from URL query params or LocalStorage
-    function initState() {
-      const params = new URLSearchParams(window.location.search);
-      if (params.has('tm')) {
-        state.targetMonths = parseFloat(params.get('tm')) || DEFAULT_STATE.targetMonths;
-        state.growthPct = parseFloat(params.get('gp')) || 0;
-        state.yieldRate = parseFloat(params.get('yr')) || 0.80;
-        state.kkosupOthers = parseFloat(params.get('ko')) ?? DEFAULT_STATE.kkosupOthers;
-        state.laplataKkosup = parseFloat(params.get('lp')) ?? DEFAULT_STATE.laplataKkosup;
-        state.b2cKkosup = parseFloat(params.get('b2c')) ?? 0;
-        state.dark = parseFloat(params.get('dk')) ?? DEFAULT_STATE.dark;
-        state.decaf = parseFloat(params.get('dc')) ?? DEFAULT_STATE.decaf;
-        state.washed = parseFloat(params.get('ws')) ?? DEFAULT_STATE.washed;
-        state.natural = parseFloat(params.get('nt')) ?? DEFAULT_STATE.natural;
-        state.stockGt = parseFloat(params.get('sgt')) ?? DEFAULT_STATE.stockGt;
-        state.stockWashed = parseFloat(params.get('sws')) ?? DEFAULT_STATE.stockWashed;
-        state.stockNatural = parseFloat(params.get('snt')) ?? DEFAULT_STATE.stockNatural;
-        state.stockBrazil = parseFloat(params.get('sbr')) ?? 0;
-        state.stockIndia = parseFloat(params.get('sin')) ?? 0;
-      } else {
-        const saved = localStorage.getItem('bc_greenbean_state_v1');
-        if (saved) {
-          try {
-            state = { ...DEFAULT_STATE, ...JSON.parse(saved) };
-          } catch (e) {}
+    async function fetchServerInventory(showMessage = false) {
+      try {
+        const res = await fetch('/inventory.json?t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.stock) {
+            state = { ...state, ...data.stock };
+          }
+          if (data.demand && showMessage) {
+            state = { ...state, ...data.demand, ...data.stock };
+          }
+          if (data.updatedAt) {
+            document.getElementById('syncStatusText').textContent = `창고 재고 동기화: ${data.updatedAt}`;
+            document.getElementById('lblWarehouseUpdated').textContent = `동기화: ${data.updatedAt}`;
+          }
+          syncInputsFromState();
+          recalculateAll();
+          if (showMessage) {
+            showToast(`🏭 서버의 최신 공장 창고 재고(${data.updatedAt})를 불러왔습니다.`);
+          }
+        }
+      } catch (e) {
+        if (FALLBACK_INV && FALLBACK_INV.stock) {
+          state = { ...state, ...FALLBACK_INV.stock };
+          syncInputsFromState();
+          recalculateAll();
         }
       }
+    }
+
+    async function initState() {
+      // First load live inventory.json from server
+      await fetchServerInventory(false);
+
+      // Then check URL params if shared via link
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('tm')) {
+        state.targetMonths = parseFloat(params.get('tm')) || state.targetMonths;
+        state.growthPct = parseFloat(params.get('gp')) || 0;
+        state.yieldRate = parseFloat(params.get('yr')) || 0.80;
+        state.kkosupOthers = parseFloat(params.get('ko')) ?? state.kkosupOthers;
+        state.laplataKkosup = parseFloat(params.get('lp')) ?? state.laplataKkosup;
+        state.b2cKkosup = parseFloat(params.get('b2c')) ?? 0;
+        state.dark = parseFloat(params.get('dk')) ?? state.dark;
+        state.decaf = parseFloat(params.get('dc')) ?? state.decaf;
+        state.washed = parseFloat(params.get('ws')) ?? state.washed;
+        state.natural = parseFloat(params.get('nt')) ?? state.natural;
+        state.stockGt = parseFloat(params.get('sgt')) ?? state.stockGt;
+        state.stockWashed = parseFloat(params.get('sws')) ?? state.stockWashed;
+        state.stockNatural = parseFloat(params.get('snt')) ?? state.stockNatural;
+        state.stockBrazil = parseFloat(params.get('sbr')) ?? state.stockBrazil;
+        state.stockIndia = parseFloat(params.get('sin')) ?? state.stockIndia;
+        state.stockDecaf = parseFloat(params.get('sdc')) ?? state.stockDecaf;
+      }
+
       syncInputsFromState();
       recalculateAll();
       renderClientTable();
@@ -772,6 +944,11 @@
       setVal('rngStockNatural', state.stockNatural);
       setVal('numStockBrazil', state.stockBrazil);
       setVal('numStockIndia', state.stockIndia);
+      setVal('numStockIndiaTop', state.stockIndia);
+      setVal('rngStockIndiaTop', Math.min(1500, state.stockIndia));
+      setVal('numStockDecaf', state.stockDecaf);
+      setVal('numStockDecafTop', state.stockDecaf);
+      setVal('rngStockDecafTop', Math.min(200, state.stockDecaf));
     }
 
     function syncFromSlider(key, val) {
@@ -782,23 +959,7 @@
 
     function syncFromInput(key, val) {
       state[key] = parseFloat(val) || 0;
-      const rngMap = {
-        targetMonths: 'rngTargetMonths',
-        kkosupOthers: 'rngKkosupOthers',
-        laplataKkosup: 'rngLaplataKkosup',
-        b2cKkosup: 'rngB2cKkosup',
-        dark: 'rngDark',
-        decaf: 'rngDecaf',
-        washed: 'rngWashed',
-        natural: 'rngNatural',
-        stockGt: 'rngStockGt',
-        stockWashed: 'rngStockWashed',
-        stockNatural: 'rngStockNatural'
-      };
-      if (rngMap[key]) {
-        const rng = document.getElementById(rngMap[key]);
-        if (rng) rng.value = state[key];
-      }
+      syncInputsFromState();
       recalculateAll();
     }
 
@@ -885,10 +1046,15 @@
       return Number(n).toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
     }
 
+    function getDateAfterDays(daysFromNov10) {
+      const base = new Date(2026, 10, 10);
+      const d = new Date(base.getTime() + daysFromNov10 * 24 * 3600 * 1000);
+      return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+    }
+
     function getRunwayCalendarText(monthsFromNov10) {
-      if (!isFinite(monthsFromNov10) || monthsFromNov10 <= 0) return '즉시 소진 (재고 없음)';
+      if (!isFinite(monthsFromNov10) || monthsFromNov10 <= 0) return '즉시 소진 (재고 0)';
       if (monthsFromNov10 > 24) return '2년 이상 여유';
-      // Base date: 2026-11-10
       const base = new Date(2026, 10, 10);
       const targetMs = base.getTime() + monthsFromNov10 * 30.4375 * 24 * 3600 * 1000;
       const d = new Date(targetMs);
@@ -904,13 +1070,12 @@
       const yr = state.yieldRate || 0.80;
       const tm = state.targetMonths || 7.67;
 
-      // Update badges
       document.getElementById('lblGrowthPct').textContent = (state.growthPct > 0 ? `+${state.growthPct}%` : `${state.growthPct}%`);
       document.getElementById('badgeTargetMonths').textContent = `${tm}개월분`;
       document.getElementById('badgeYield').textContent = `${(yr * 100).toFixed(1)}% (÷${yr.toFixed(2)})`;
       document.getElementById('thTargetNeed').textContent = `목표 기간(${tm}개월) 총 필요량`;
 
-      // Monthly Roasted Bean (kg/month)
+      // Monthly Roasted Bean
       const kkosupRoasted = (state.kkosupOthers + state.laplataKkosup) * gMult + state.b2cKkosup;
       const darkRoasted   = state.dark * gMult;
       const decafRoasted  = state.decaf * gMult;
@@ -919,7 +1084,7 @@
 
       document.getElementById('lblKkosupFinalMonthly').textContent = `${fmtNum(kkosupRoasted, 1)} kg/월`;
 
-      // Monthly Green Bean Needed (kg/month)
+      // Monthly Green Bean
       const kkosupGreen = kkosupRoasted / yr;
       const darkGreen   = darkRoasted / yr;
 
@@ -932,6 +1097,16 @@
       const washedMonthly  = washedRoasted / yr;
       const naturalMonthly = naturalRoasted / yr;
 
+      // Daily & Weekly Green Bean Velocity
+      const gtDaily      = gtMonthly / 30.4375;
+      const indiaDaily   = indiaMonthly / 30.4375;
+      const indiaWeekly  = indiaMonthly / 4.333;
+      const decafDaily   = decafMonthly / 30.4375;
+      const decafWeekly  = decafMonthly / 4.333;
+      const brazilDaily  = brazilMonthly / 30.4375;
+      const washedDaily  = washedMonthly / 30.4375;
+      const naturalDaily = naturalMonthly / 30.4375;
+
       // Target Period Total Green Bean Needed
       const gtTotalNeed      = gtMonthly * tm;
       const indiaTotalNeed   = indiaMonthly * tm;
@@ -940,10 +1115,11 @@
       const washedTotalNeed  = washedMonthly * tm;
       const naturalTotalNeed = naturalMonthly * tm;
 
-      // Net Additional Needed (Subtracting Current Inventory)
+      // Net Additional Needed
       const gtAdd      = Math.max(0, gtTotalNeed - state.stockGt);
       const indiaAdd   = Math.max(0, indiaTotalNeed - state.stockIndia);
       const brazilAdd  = Math.max(0, brazilTotalNeed - state.stockBrazil);
+      const decafAdd   = Math.max(0, decafTotalNeed - state.stockDecaf);
       const washedAdd  = Math.max(0, washedTotalNeed - state.stockWashed);
       const naturalAdd = Math.max(0, naturalTotalNeed - state.stockNatural);
 
@@ -952,13 +1128,15 @@
       const washedRunway  = state.stockWashed / washedMonthly;
       const naturalRunway = state.stockNatural / naturalMonthly;
       const brazilRunway  = state.stockBrazil / brazilMonthly;
+      const indiaRunway   = state.stockIndia / indiaMonthly;
+      const decafRunway   = state.stockDecaf / decafMonthly;
 
       // Update Stock Helper Labels
       document.getElementById('lblStockGtBags').textContent = `69kg 마대 기준 약 ${fmtNum(state.stockGt / 69, 1)}백 (${fmtNum(state.stockGt/1000, 2)}톤)`;
       document.getElementById('lblStockWashedBags').textContent = `60kg 마대 기준 ${fmtNum(state.stockWashed / 60, 1)}백 (${fmtNum(state.stockWashed/1000, 2)}톤)`;
       document.getElementById('lblStockNaturalBags').textContent = `60kg 마대 기준 ${fmtNum(state.stockNatural / 60, 1)}백`;
 
-      // Update KPI Card 1: Guatemala
+      // Update KPI Cards 1~3
       document.getElementById('kpiGtAddKg').textContent = `${fmtNum(gtAdd, 0)} kg`;
       document.getElementById('kpiGtAddTon').textContent = `(${fmtNum(gtAdd / 1000, 2)}톤)`;
       document.getElementById('kpiGtBags').textContent = `${fmtNum(gtAdd / 69, 1)}백 (69kg백)`;
@@ -970,7 +1148,6 @@
       document.getElementById('kpiGtMonthly').textContent = `${fmtNum(gtMonthly, 1)} kg/월`;
       document.getElementById('kpiGtRunwayDate').textContent = `소진: ${getRunwayCalendarText(gtRunway)}`;
 
-      // Update KPI Card 2: Ethiopia Natural
       document.getElementById('kpiEthNAddKg').textContent = `${fmtNum(naturalAdd, 0)} kg`;
       document.getElementById('kpiEthNBags').textContent = `(${fmtNum(naturalAdd / 60, 1)}백 / 60kg)`;
       document.getElementById('kpiEthNStockVal').textContent = `${fmtNum(state.stockNatural, 0)} kg (${fmtNum(state.stockNatural/60, 1)}백)`;
@@ -982,7 +1159,6 @@
       document.getElementById('kpiEthNMonthly').textContent = `${fmtNum(naturalMonthly, 1)} kg/월`;
       document.getElementById('kpiEthNRunwayDate').textContent = `소진: ${getRunwayCalendarText(naturalRunway)}`;
 
-      // Update KPI Card 3: Ethiopia Washed
       document.getElementById('kpiEthWAddKg').textContent = `${fmtNum(washedAdd, 0)} kg`;
       document.getElementById('kpiEthWBags').textContent = `(${fmtNum(washedAdd / 60, 1)}백 / 60kg)`;
       document.getElementById('kpiEthWStockVal').textContent = `${fmtNum(state.stockWashed, 0)} kg (${fmtNum(state.stockWashed/1000, 2)}톤)`;
@@ -994,24 +1170,120 @@
       document.getElementById('kpiEthWMonthly').textContent = `${fmtNum(washedMonthly, 1)} kg/월`;
       document.getElementById('kpiEthWRunwayDate').textContent = `소진: ${getRunwayCalendarText(washedRunway)}`;
 
-      // Update KPI Card 4: India, Decaf, Brazil
+      // Update Periodic Purchase Timing Section (Section 2)
+      // A) INDIA Timing
+      const indiaTotalDaysFor1Ton = 1000.0 / indiaDaily;
+      const indiaDaysToReorderFrom1Ton = 666.7 / indiaDaily;
+      const indiaDaysUntil333 = (state.stockIndia - 333.3) / indiaDaily;
+      const indiaDaysUntilZero = state.stockIndia / indiaDaily;
+
+      document.getElementById('indiaVelMonthly').textContent = `${fmtNum(indiaMonthly, 1)} kg/월`;
+      document.getElementById('indiaVelSplit').textContent = `꼬숩 ${fmtNum(indiaKkosupM, 0)} + 다크 ${fmtNum(indiaDarkM, 0)}kg`;
+      document.getElementById('indiaVelDaily').textContent = `${fmtNum(indiaDaily, 1)} kg/일`;
+      document.getElementById('indiaVelWeekly').textContent = `주 ${fmtNum(indiaWeekly, 1)} kg 소모`;
+      document.getElementById('india1TonDays').textContent = `총 ${fmtNum(indiaTotalDaysFor1Ton, 1)}일 사용`;
+      document.getElementById('india2ThirdsDays').textContent = `2/3 소진(발주선): ${fmtNum(indiaDaysToReorderFrom1Ton, 1)}일`;
+
+      document.getElementById('kpiIndiaCurStock').textContent = fmtNum(state.stockIndia, 0);
       document.getElementById('kpiIndiaMonthly').textContent = `${fmtNum(indiaMonthly, 1)} kg/월`;
-      document.getElementById('kpiIndiaTotal').textContent = `기간 총 ${fmtNum(indiaTotalNeed, 0)}kg`;
-      const decafWeeklyKg = decafMonthly / 4.333;
-      const decafWeeklyUnits = decafWeeklyKg / 20.0;
+      document.getElementById('kpiIndiaDaily').textContent = `일 ${fmtNum(indiaDaily, 1)}kg 소모`;
+
+      const indiaGaugePct = Math.min(100, Math.round((state.stockIndia / 1000.0) * 100));
+      document.getElementById('indiaGaugeLabel').textContent = `현재 ${fmtNum(state.stockIndia, 0)} kg (전체 소진까지 약 ${fmtNum(indiaDaysUntilZero, 1)}일)`;
+      const indiaBar = document.getElementById('indiaGaugeBar');
+      indiaBar.style.width = `${indiaGaugePct}%`;
+
+      const indiaBadge = document.getElementById('indiaStatusBadge');
+      const indiaCallout = document.getElementById('indiaActionCallout');
+
+      if (state.stockIndia <= 333.3) {
+        indiaBar.className = 'h-full bg-red-600 transition-all duration-200';
+        indiaBadge.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-red-600 text-white shadow-sm animate-pulse';
+        indiaBadge.textContent = '🔴 지금 1톤 발주 타이밍!';
+        document.getElementById('kpiIndiaNextOrder').textContent = `🔴 발주선(333kg) 이하! 즉시 발주`;
+        indiaCallout.className = 'p-3 rounded-xl bg-red-50 border-l-4 border-red-600 text-xs space-y-1 shadow-sm';
+        indiaCallout.innerHTML = `
+          <div class="font-extrabold text-red-900">🚨 [발주 타이밍 도래] 현재 재고(${fmtNum(state.stockIndia, 0)}kg)가 1/3 기준선(333kg) 이하입니다!</div>
+          <div class="text-red-800">• 지금 <strong>인도 생두 1톤(1,000kg)</strong>을 추가 구매하셔야 품절 없이 이어집니다. (현재 재고 완전 소진까지 <strong>약 ${fmtNum(indiaDaysUntilZero, 1)}일 [${getDateAfterDays(indiaDaysUntilZero)}]</strong> 남음)</div>
+        `;
+      } else {
+        indiaBar.className = 'h-full bg-emerald-600 transition-all duration-200';
+        indiaBadge.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-700 text-white shadow-sm';
+        indiaBadge.textContent = `🟢 발주선까지 D-${Math.round(indiaDaysUntil333)}일`;
+        document.getElementById('kpiIndiaNextOrder').textContent = `발주선(333kg)까지 D-${Math.round(indiaDaysUntil333)}일 (${getDateAfterDays(indiaDaysUntil333)})`;
+        indiaCallout.className = 'p-3 rounded-xl bg-white border-l-4 border-emerald-600 text-xs space-y-1 shadow-sm';
+        indiaCallout.innerHTML = `
+          <div class="font-extrabold text-emerald-950">✅ 다음 1톤 발주 권장 타이밍: <span class="text-amber-800 underline">${getDateAfterDays(indiaDaysUntil333)}경 (약 ${fmtNum(indiaDaysUntil333, 1)}일 후)</span></div>
+          <div class="text-stone-600">• 1/3 발주 기준선(333kg) 도달까지 여유분 <strong>${fmtNum(state.stockIndia - 333.3, 0)}kg</strong> 남았습니다. (현재 재고 완전 소진일은 <strong>${getDateAfterDays(indiaDaysUntilZero)}경 [약 ${fmtNum(indiaDaysUntilZero, 1)}일 후]</strong>)</div>
+        `;
+      }
+
+      // B) DECAF Timing (20kg Weekly Purchase)
+      const decafWeeklyUnits = decafWeekly / 20.0;
       const decafMonthlyUnits = decafMonthly / 20.0;
+      const daysPer20kgBox = 20.0 / decafDaily;
+      const decafDaysRemaining = state.stockDecaf / decafDaily;
+      const decafBoxesRemaining = state.stockDecaf / 20.0;
+
+      document.getElementById('decafVelWeekly').textContent = `${fmtNum(decafWeekly, 1)} kg/주`;
+      document.getElementById('decafVelWeeklyUnits').textContent = `주 평균 ${fmtNum(decafWeeklyUnits, 1)}개 (20kg단위)`;
+      document.getElementById('decafOneBoxDays').textContent = `${fmtNum(daysPer20kgBox, 1)}일마다 1개`;
+      document.getElementById('decafVelDaily').textContent = `하루 ${fmtNum(decafDaily, 1)} kg 소모`;
+      document.getElementById('decafMonthUnits').textContent = `월 ${fmtNum(decafMonthlyUnits, 1)}개 (${Math.ceil(decafMonthlyUnits)}개)`;
+      document.getElementById('decafMonthKg').textContent = `월 ${fmtNum(decafMonthly, 1)} kg 소요`;
+
+      document.getElementById('kpiDecafCurStock').textContent = fmtNum(state.stockDecaf, 0);
       document.getElementById('kpiDecafMonthly').textContent = `${fmtNum(decafMonthly, 1)} kg/월`;
-      document.getElementById('kpiDecafWeeklyBoxes').textContent = `주 평균 ${fmtNum(decafWeeklyUnits, 1)}개 (${fmtNum(decafWeeklyKg, 1)}kg/주)`;
-      document.getElementById('kpiDecafMonthlyBoxes').textContent = `월 약 ${fmtNum(decafMonthlyUnits, 1)}개(20kg단위)`;
+      document.getElementById('kpiDecafWeeklyBoxes').textContent = `주 ${fmtNum(decafWeeklyUnits, 1)}개 · 현재고 ${fmtNum(decafDaysRemaining, 1)}일분`;
+      document.getElementById('kpiDecafMonthlyBoxes').textContent = `월 약 ${Math.ceil(decafMonthlyUnits)}개(${Math.ceil(decafMonthlyUnits)*20}kg)`;
+
+      const decafBadge = document.getElementById('decafStatusBadge');
+      const decafCallout = document.getElementById('decafActionCallout');
+      const recWeeklyBoxes = Math.ceil(decafWeeklyUnits);
+
+      if (decafDaysRemaining <= 4.0) {
+        decafBadge.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-red-600 text-white shadow-sm animate-pulse';
+        decafBadge.textContent = `🔴 이번 주 즉시 발주 (${recWeeklyBoxes}개 권장)`;
+        decafCallout.className = 'p-3 rounded-xl bg-red-50 border-l-4 border-red-600 text-xs space-y-1 shadow-sm';
+        decafCallout.innerHTML = `
+          <div class="font-extrabold text-red-900">🚨 현재 디카페인 재고(${fmtNum(state.stockDecaf, 0)}kg = ${fmtNum(decafBoxesRemaining, 1)}개)가 ${fmtNum(decafDaysRemaining, 1)}일분밖에 남지 않았습니다!</div>
+          <div class="text-red-800">• 즉시 <strong>20kg 단위 ${recWeeklyBoxes}개 (${recWeeklyBoxes*20}kg, 약 ${fmtNum(recWeeklyBoxes * daysPer20kgBox, 1)}일분)</strong> 발주를 권장합니다.</div>
+        `;
+      } else {
+        const nextOrderDays = Math.max(1, decafDaysRemaining - 3.0); // Order 3 days before depletion
+        decafBadge.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-700 text-white shadow-sm';
+        decafBadge.textContent = `🟢 다음 발주 D-${Math.round(nextOrderDays)}일 (${getDateAfterDays(nextOrderDays)})`;
+        decafCallout.className = 'p-3 rounded-xl bg-white border-l-4 border-indigo-600 text-xs space-y-1 shadow-sm';
+        decafCallout.innerHTML = `
+          <div class="font-extrabold text-indigo-950">✅ 현재 재고(${fmtNum(state.stockDecaf, 0)}kg)로 <span class="text-indigo-700">${fmtNum(decafDaysRemaining, 1)}일 (${getDateAfterDays(decafDaysRemaining)}까지)</span> 사용 가능</div>
+          <div class="text-stone-600">• 소진 3일 전인 <strong>${getDateAfterDays(nextOrderDays)}경(D-${Math.round(nextOrderDays)}일)</strong>에 <strong>20kg × ${recWeeklyBoxes}개(${recWeeklyBoxes*20}kg)</strong>를 주문하시면 끊기지 않습니다.</div>
+        `;
+      }
+
+      // 4-Week Buying Pattern Boxes
+      const total4WBoxes = Math.round(decafMonthlyUnits);
+      const baseBoxPerW = Math.floor(total4WBoxes / 4);
+      const remBoxes = total4WBoxes % 4;
+      const weekBoxes = [1, 2, 3, 4].map(w => baseBoxPerW + (w <= remBoxes ? 1 : 0));
+      document.getElementById('decaf4WeekPlan').innerHTML = weekBoxes.map((cnt, i) => `
+        <div class="p-2 rounded-lg bg-white border border-indigo-200/80">
+          <div class="text-[10px] text-stone-500 font-semibold">${i+1}주차 권장 발주</div>
+          <div class="font-extrabold text-indigo-900 text-xs mt-0.5">${cnt}개 (${cnt*20}kg)</div>
+          <div class="text-[10px] text-stone-400">약 ${fmtNum(cnt * daysPer20kgBox, 1)}일 사용</div>
+        </div>
+      `).join('');
+
+      // Brazil KPI
       document.getElementById('kpiBrazilAdd').textContent = `추가 ${fmtNum(brazilAdd, 0)} kg`;
       document.getElementById('kpiBrazilMonthly').textContent = `월 ${fmtNum(brazilMonthly, 1)}kg (${fmtNum(brazilAdd/60, 1)}백)`;
-      document.getElementById('kpiBrazilStockNote').textContent = `현재고 ${fmtNum(state.stockBrazil, 0)}kg 차감 후`;
+      document.getElementById('kpiBrazilStockNote').textContent = `현재고 ${fmtNum(state.stockBrazil, 0)}kg (${brazilRunway.toFixed(1)}개월분)`;
 
       // Render Visual Runway Chart
       const runwayItems = [
         { name: '과테말라 (꼬숩 60.6%)', stock: state.stockGt, monthly: gtMonthly, runway: gtRunway, addKg: gtAdd, bagKg: 69, color: 'bg-amber-500' },
         { name: '에티 부쿠사이사 내추럴', stock: state.stockNatural, monthly: naturalMonthly, runway: naturalRunway, addKg: naturalAdd, bagKg: 60, color: 'bg-red-500' },
         { name: '에티 단체 워시드', stock: state.stockWashed, monthly: washedMonthly, runway: washedRunway, addKg: washedAdd, bagKg: 60, color: 'bg-emerald-500' },
+        { name: '인도 합산 (꼬숩+다크)', stock: state.stockIndia, monthly: indiaMonthly, runway: indiaRunway, addKg: indiaAdd, bagKg: 60, color: 'bg-amber-700' },
         { name: '브라질 (다크 39.4%)', stock: state.stockBrazil, monthly: brazilMonthly, runway: brazilRunway, addKg: brazilAdd, bagKg: 60, color: 'bg-stone-500' },
       ];
 
@@ -1023,15 +1295,15 @@
         return `
           <div class="space-y-1">
             <div class="flex flex-wrap justify-between text-xs">
-              <span class="font-bold text-stone-800">${item.name}</span>
+              <span class="font-bold text-stone-800">${item.name} <span class="text-stone-400 font-normal">(현재고 ${fmtNum(item.stock, 0)}kg)</span></span>
               <div class="flex items-center gap-3">
                 <span class="text-emerald-700 font-semibold">현재고 사용: ${item.runway.toFixed(1)}개월</span>
-                <span class="font-extrabold text-amber-900">추가 필요: +${fmtNum(item.addKg, 0)}kg (${fmtNum(item.addKg/item.bagKg, 1)}백)</span>
+                <span class="font-extrabold text-amber-900">목표기간 추가 필요: +${fmtNum(item.addKg, 0)}kg (${fmtNum(item.addKg/item.bagKg, 1)}백)</span>
               </div>
             </div>
             <div class="w-full h-4 bg-stone-200 rounded-full overflow-hidden flex text-[10px] font-bold text-white leading-4">
-              <div class="bg-emerald-600 h-full text-center transition-all duration-200" style="width:${covPct}%">${covPct > 14 ? coveredM.toFixed(1)+'개월' : ''}</div>
-              <div class="${item.color} h-full text-center transition-all duration-200" style="width:${needPct}%">${needPct > 14 ? '+'+needM.toFixed(1)+'개월분 추가' : ''}</div>
+              <div class="bg-emerald-600 h-full text-center transition-all duration-200" style="width:${covPct}%">${covPct > 12 ? coveredM.toFixed(1)+'개월' : ''}</div>
+              <div class="${item.color} h-full text-center transition-all duration-200" style="width:${needPct}%">${needPct > 12 ? '+'+needM.toFixed(1)+'개월분 추가' : ''}</div>
             </div>
           </div>
         `;
@@ -1044,8 +1316,9 @@
           name: '① 과테말라',
           blend: '꼬숩 블랜드 (60.60%)',
           monthly: gtMonthly,
+          daily: gtDaily,
           stock: state.stockGt,
-          runwayText: getRunwayCalendarText(gtRunway),
+          runwayText: `소진: ${getRunwayCalendarText(gtRunway)}`,
           totalNeed: gtTotalNeed,
           addNeed: gtAdd,
           unitText: `${fmtNum(gtAdd / 69, 1)}백 (69kg백) / ${fmtNum(gtAdd/1000, 2)}톤`,
@@ -1055,17 +1328,19 @@
           name: '② 인도 (합산)',
           blend: '꼬숩(39.4%) + 다크(60.6%)',
           monthly: indiaMonthly,
+          daily: indiaDaily,
           stock: state.stockIndia,
-          runwayText: '잔여 1/3 시점마다 1톤 구매',
+          runwayText: state.stockIndia <= 333.3 ? '🔴 즉시 1톤 발주 필요' : `1/3 발주선: ${getDateAfterDays(indiaDaysUntil333)} (D-${Math.round(indiaDaysUntil333)})`,
           totalNeed: indiaTotalNeed,
           addNeed: indiaAdd,
-          unitText: `월 1톤 롤링 (기간 총 ${fmtNum(indiaAdd/1000, 2)}톤)`,
+          unitText: `1톤 롤링 발주 (기간 중 약 ${fmtNum(indiaAdd/1000, 1)}회)`,
           highlight: false
         },
         {
           name: '   ㄴ 인도 (꼬숩용)',
           blend: '꼬숩 블랜드 (39.40%)',
           monthly: indiaKkosupM,
+          daily: indiaKkosupM / 30.4375,
           stock: 0,
           runwayText: '-',
           totalNeed: indiaKkosupM * tm,
@@ -1077,6 +1352,7 @@
           name: '   ㄴ 인도 (다크초코용)',
           blend: '다크초코 블랜드 (60.60%)',
           monthly: indiaDarkM,
+          daily: indiaDarkM / 30.4375,
           stock: 0,
           runwayText: '-',
           totalNeed: indiaDarkM * tm,
@@ -1088,8 +1364,9 @@
           name: '③ 에티오피아 부쿠사이사 내추럴',
           blend: '산미 내추럴 싱글 (100%)',
           monthly: naturalMonthly,
+          daily: naturalDaily,
           stock: state.stockNatural,
-          runwayText: getRunwayCalendarText(naturalRunway),
+          runwayText: `소진: ${getRunwayCalendarText(naturalRunway)}`,
           totalNeed: naturalTotalNeed,
           addNeed: naturalAdd,
           unitText: `${fmtNum(naturalAdd / 60, 1)}백 (60kg백)`,
@@ -1099,8 +1376,9 @@
           name: '④ 에티오피아 단체 워시드',
           blend: '산미 워시드 싱글 (100%)',
           monthly: washedMonthly,
+          daily: washedDaily,
           stock: state.stockWashed,
-          runwayText: getRunwayCalendarText(washedRunway),
+          runwayText: `소진: ${getRunwayCalendarText(washedRunway)}`,
           totalNeed: washedTotalNeed,
           addNeed: washedAdd,
           unitText: `${fmtNum(washedAdd / 60, 1)}백 (60kg백)`,
@@ -1110,19 +1388,21 @@
           name: '⑤ 디카페인',
           blend: '디카페인 싱글 (100%)',
           monthly: decafMonthly,
-          stock: 0,
-          runwayText: '주 단위 20kg 수시 발주',
+          daily: decafDaily,
+          stock: state.stockDecaf,
+          runwayText: `${fmtNum(decafDaysRemaining, 1)}일분 보유 (20kg당 ${fmtNum(daysPer20kgBox, 1)}일)`,
           totalNeed: decafTotalNeed,
-          addNeed: decafTotalNeed,
-          unitText: `주 ${fmtNum(decafWeeklyUnits, 1)}개(${fmtNum(decafWeeklyKg, 0)}kg) / 월 ${fmtNum(decafMonthlyUnits, 1)}개`,
+          addNeed: decafAdd,
+          unitText: `주 ${fmtNum(decafWeeklyUnits, 1)}개(${fmtNum(decafWeekly, 0)}kg) / 월 ${Math.ceil(decafMonthlyUnits)}개`,
           highlight: false
         },
         {
           name: '⑥ 브라질',
           blend: '다크초코 블랜드 (39.40%)',
           monthly: brazilMonthly,
+          daily: brazilDaily,
           stock: state.stockBrazil,
-          runwayText: state.stockBrazil > 0 ? getRunwayCalendarText(brazilRunway) : '재고 미입력(0kg)',
+          runwayText: state.stockBrazil > 0 ? `소진: ${getRunwayCalendarText(brazilRunway)}` : '재고 0kg',
           totalNeed: brazilTotalNeed,
           addNeed: brazilAdd,
           unitText: `${fmtNum(brazilAdd / 60, 1)}백 (60kg백)`,
@@ -1138,8 +1418,8 @@
           <tr class="${rowCls} hover:bg-amber-50/80 transition">
             <td class="py-3 px-3 ${r.sub ? 'pl-6' : 'font-bold'}">${r.name}</td>
             <td class="py-3 px-3 text-xs">${r.blend}</td>
-            <td class="py-3 px-3 text-right font-semibold">${fmtNum(r.monthly, 1)} kg/월</td>
-            <td class="py-3 px-3 text-right">${r.sub ? '-' : fmtNum(r.stock, 0) + ' kg'}</td>
+            <td class="py-3 px-3 text-right font-semibold">${fmtNum(r.monthly, 1)} kg/월 <span class="block text-[10px] text-stone-400 font-normal">(일 ${fmtNum(r.daily, 1)}kg)</span></td>
+            <td class="py-3 px-3 text-right font-bold">${r.sub ? '-' : fmtNum(r.stock, 0) + ' kg'}</td>
             <td class="py-3 px-3 text-center text-xs font-semibold">${r.runwayText}</td>
             <td class="py-3 px-3 text-right">${fmtNum(r.totalNeed, 1)} kg</td>
             <td class="py-3 px-3 text-right font-extrabold text-amber-950 bg-amber-100/50">${fmtNum(r.addNeed, 1)} kg</td>
@@ -1148,9 +1428,9 @@
         `;
       }).join('');
 
-      // Total Row (excluding sub-rows)
       const mainRows = tableRows.filter(r => !r.sub);
       const totMonthly = mainRows.reduce((a, b) => a + b.monthly, 0);
+      const totDaily   = mainRows.reduce((a, b) => a + b.daily, 0);
       const totStock   = mainRows.reduce((a, b) => a + b.stock, 0);
       const totNeed    = mainRows.reduce((a, b) => a + b.totalNeed, 0);
       const totAdd     = mainRows.reduce((a, b) => a + b.addNeed, 0);
@@ -1159,7 +1439,7 @@
         <tr class="bg-stone-100 font-extrabold text-stone-950 border-t-2 border-stone-400">
           <td class="py-3.5 px-3">전 품목 총계 (중복 제외)</td>
           <td class="py-3.5 px-3 text-xs">전체 원재료 합산</td>
-          <td class="py-3.5 px-3 text-right">${fmtNum(totMonthly, 1)} kg/월</td>
+          <td class="py-3.5 px-3 text-right">${fmtNum(totMonthly, 1)} kg/월 <span class="block text-[10px] font-normal text-stone-500">(일 ${fmtNum(totDaily, 1)}kg)</span></td>
           <td class="py-3.5 px-3 text-right">${fmtNum(totStock, 0)} kg</td>
           <td class="py-3.5 px-3 text-center text-xs">-</td>
           <td class="py-3.5 px-3 text-right">${fmtNum(totNeed, 1)} kg</td>
@@ -1226,22 +1506,12 @@
       const box = document.getElementById('toastBox');
       document.getElementById('toastMsg').textContent = msg;
       box.classList.remove('hidden');
-      setTimeout(() => box.classList.add('hidden'), 2800);
+      setTimeout(() => box.classList.add('hidden'), 3000);
     }
 
     function saveToLocal() {
       localStorage.setItem('bc_greenbean_state_v1', JSON.stringify(state));
       showToast('✅ 현재 시뮬레이션 설정이 이 기기에 저장되었습니다.');
-    }
-
-    function resetToDefault() {
-      localStorage.removeItem('bc_greenbean_state_v1');
-      window.history.replaceState({}, '', window.location.pathname);
-      state = { ...DEFAULT_STATE };
-      syncInputsFromState();
-      setYield(0.80);
-      applyScenario('recent3');
-      showToast('🔄 초기 권장 설정값으로 복원되었습니다.');
     }
 
     function shareCurrentState() {
@@ -1260,7 +1530,8 @@
         sws: state.stockWashed,
         snt: state.stockNatural,
         sbr: state.stockBrazil,
-        sin: state.stockIndia
+        sin: state.stockIndia,
+        sdc: state.stockDecaf
       });
       const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
       window.history.replaceState({}, '', `?${params.toString()}`);
