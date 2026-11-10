@@ -123,7 +123,7 @@
               <span>☕</span>
               <span>완제품(원두) 5대 품목별 월평균 출고량 & 생두 환산량 (26년 1~8월 실적 기준)</span>
             </h3>
-            <span class="text-[11px] text-stone-500">*라플라타 리모델링 공백(월 250kg) 정상화 보정 완료</span>
+            <span class="text-[11px] text-stone-500">*라플라타(월 250kg) 보정 + 자사몰·오프라인 매장(꼬숩 80kg, 부쿠 40kg/월) 합산 반영</span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="heroProductCards">
@@ -596,15 +596,15 @@
 
               <div class="pt-2 border-t border-stone-100">
                 <div class="flex justify-between text-xs font-semibold text-stone-700 mb-1">
-                  <span>· B2C (온라인+오프라인 매장 소매) 추가분</span>
+                  <span class="text-amber-900 font-bold">· ★ 자사몰(온라인) + 오프라인 매장 월 사용량</span>
                   <div class="flex items-center gap-1">
-                    <input type="number" id="numB2cKkosup" step="10" min="0" max="1000" value="0"
+                    <input type="number" id="numB2cKkosup" step="5" min="0" max="1000" value="80"
                       oninput="syncFromInput('b2cKkosup', this.value)"
                       class="w-20 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
                     <span>kg/월</span>
                   </div>
                 </div>
-                <input type="range" id="rngB2cKkosup" min="0" max="500" step="10" value="0"
+                <input type="range" id="rngB2cKkosup" class="slider-amber" min="0" max="300" step="5" value="80"
                   oninput="syncFromSlider('b2cKkosup', this.value)" />
               </div>
             </div>
@@ -657,19 +657,37 @@
                   oninput="syncFromSlider('washed', this.value)" />
               </div>
 
-              <div class="p-3 rounded-xl bg-white border border-stone-200/90">
-                <div class="flex justify-between items-center mb-1">
-                  <span class="text-xs font-extrabold text-red-900">⑤ 산미 - 에티 내추럴 (원두)</span>
-                  <div class="flex items-center gap-1">
-                    <input type="number" id="numNatural" step="2" min="10" max="600" value="62.7"
-                      oninput="syncFromInput('natural', this.value)"
-                      class="w-16 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
-                    <span class="text-xs text-stone-600">kg/월</span>
-                  </div>
+              <div class="p-3 rounded-xl bg-white border border-red-200/90 space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-extrabold text-red-900">⑤ 산미 - 부쿠 내추럴 (원두)</span>
+                  <span class="text-xs font-extrabold text-red-800" id="lblNaturalFinalMonthly">총 102.7 kg/월</span>
                 </div>
-                <div class="text-[11px] text-stone-500 mb-1.5">부쿠사이사N 등 (최근3개월 62.7 / 8월 76kg)</div>
-                <input type="range" id="rngNatural" min="20" max="250" step="2" value="62.7"
-                  oninput="syncFromSlider('natural', this.value)" />
+                <div>
+                  <div class="flex justify-between items-center text-[11px] text-stone-600 mb-0.5">
+                    <span>· B2B 납품 (최근3개월 62.7 / 8월 76kg)</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="numNatural" step="2" min="10" max="600" value="62.7"
+                        oninput="syncFromInput('natural', this.value)"
+                        class="w-14 text-right font-bold text-xs px-1 py-0.5 rounded border border-stone-300" />
+                      <span>kg</span>
+                    </div>
+                  </div>
+                  <input type="range" id="rngNatural" min="20" max="200" step="2" value="62.7"
+                    oninput="syncFromSlider('natural', this.value)" />
+                </div>
+                <div class="pt-1.5 border-t border-red-100">
+                  <div class="flex justify-between items-center text-[11px] font-bold text-red-900 mb-0.5">
+                    <span>· ★ 자사몰 + 오프라인 매장 사용량</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="numB2cNatural" step="5" min="0" max="300" value="40"
+                        oninput="syncFromInput('b2cNatural', this.value)"
+                        class="w-14 text-right font-extrabold text-xs px-1 py-0.5 rounded border border-red-300 bg-red-50" />
+                      <span>kg</span>
+                    </div>
+                  </div>
+                  <input type="range" id="rngB2cNatural" min="0" max="150" step="5" value="40"
+                    oninput="syncFromSlider('b2cNatural', this.value)" />
+                </div>
               </div>
 
             </div>
@@ -882,7 +900,7 @@
 
   <script>
     const B2B_DATA = {"kkosup": [{"name": "SM월배", "m26": [170.0, 90.0, 140.0, 120.0, 120.0, 110.0, 100.0, 120.0], "m25": [150.0, 130.0, 150.0, 180.0, 100.0, 140.0, 150.0], "sum26": 970.0}, {"name": "SM복현", "m26": [80.0, 115.0, 130.0, 120.0, 100.0, 130.0, 100.0, 120.0], "m25": [110.0, 150.0, 120.0, 160.0, 80.0, 80.0, 120.0], "sum26": 895.0}, {"name": "SM화원", "m26": [80.0, 90.0, 90.0, 100.0, 80.0, 100.0, 80.0, 110.0], "m25": [80.0, 100.0, 90.0, 120.0, 70.0, 100.0, 100.0], "sum26": 730.0}, {"name": "라플라타", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 210.0, 240.0], "m25": [100.0, 200.0, 120.0, 310.0, 20.0, 100.0, 0.0], "sum26": 470.0}, {"name": "피터팬 본점", "m26": [10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 30.0, 10.0], "m25": [30.0, 20.0, 10.0, 30.0, 10.0, 10.0, 30.0], "sum26": 130.0}, {"name": "피터팬 연대점", "m26": [30.0, 100.0, 100.0, 190.0, 150.0, 90.0, 50.0, 80.0], "m25": [80.0, 50.0, 80.0, 150.0, 100.0, 130.0, 80.0], "sum26": 790.0}, {"name": "피터팬 원천점", "m26": [60.0, 105.0, 60.0, 90.0, 90.0, 60.0, 90.0, 60.0], "m25": [90.0, 60.0, 90.0, 60.0, 90.0, 70.0, 60.0], "sum26": 615.0}, {"name": "로아 한동대점", "m26": [0.0, 0.0, 150.0, 60.0, 60.0, 30.0, 0.0, 30.0], "m25": [50.0, 0.0, 50.0, 40.0, 90.0, 70.0, 80.0], "sum26": 330.0}, {"name": "로아 서초점", "m26": [0.0, 80.0, 80.0, 70.0, 80.0, 140.0, 140.0, 150.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0], "sum26": 740.0}, {"name": "일산 자이안카페", "m26": [30.0, 30.0, 20.0, 30.0, 30.0, 30.0, 30.0, 30.0], "m25": [30.0, 40.0, 23.0, 20.0, 20.0, 20.0, 30.0], "sum26": 230.0}, {"name": "코야커피", "m26": [10.0, 10.0, 5.0, 10.0, 10.0, 10.0, 0.0, 6.0], "m25": [20.0, 30.0, 20.0, 20.0, 20.0, 30.0, 20.0], "sum26": 61.0}, {"name": "보현산전망대", "m26": [20.0, 30.0, 20.0, 30.0, 30.0, 20.0, 30.0, 30.0], "m25": [20.0, 20.0, 30.0, 70.0, 10.0, 20.0, 30.0], "sum26": 210.0}, {"name": "고성무끼", "m26": [10.0, 25.0, 10.0, 15.0, 25.0, 20.0, 55.0, 60.0], "m25": [15.0, 50.0, 50.0, 40.0, 0.0, 10.0, 20.0], "sum26": 220.0}, {"name": "아마빌레", "m26": [20.0, 30.0, 30.0, 0.0, 30.0, 10.0, 20.0, 10.0], "m25": [20.0, 10.0, 20.0, 50.0, 0.0, 20.0, 30.0], "sum26": 150.0}, {"name": "포항 함께", "m26": [10.0, 10.0, 20.0, 10.0, 20.0, 0.0, 20.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 100.0}, {"name": "나온김에 커피한잔", "m26": [10.0, 5.0, 5.0, 5.0, 10.0, 10.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 65.0}, {"name": "대잠맨션(장성점)", "m26": [15.0, 10.0, 10.0, 7.0, 10.0, 10.0, 10.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 72.0}, {"name": "빈앤스타", "m26": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 80.0}, {"name": "하울", "m26": [6.0, 0.0, 7.0, 8.0, 18.0, 26.0, 13.0, 7.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 85.0}, {"name": "카페미소", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 10.0}], "dark": [{"name": "새라울", "m26": [70.0, 70.0, 60.0, 110.0, 70.0, 120.0, 70.0, 91.0], "m25": [60.0, 50.0, 80.0, 94.0, 70.0, 60.0, 70.0], "sum26": 661.0}, {"name": "일리노 달동점", "m26": [60.0, 60.0, 155.0, 60.0, 90.0, 60.0, 30.0, 30.0], "m25": [0.0, 40.0, 70.0, 90.0, 60.0, 40.0, 60.0], "sum26": 545.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 105.0, 105.0, 70.0, 35.0, 35.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 350.0}, {"name": "코야커피", "m26": [15.0, 10.0, 15.0, 20.0, 30.0, 25.0, 30.0, 35.0], "m25": [10.0, 10.0, 5.0, 10.0, 10.0, 15.0, 10.0], "sum26": 180.0}, {"name": "MBC 카페미아", "m26": [30.0, 38.0, 39.0, 34.0, 27.0, 37.0, 34.0, 42.0], "m25": [30.0, 30.0, 50.0, 35.0, 20.0, 30.0, 30.0], "sum26": 281.0}], "decaf": [{"name": "SM월배", "m26": [13.5, 15.0, 12.5, 11.0, 12.0, 14.5, 13.5, 13.5], "m25": [12.5, 11.0, 11.0, 19.5, 7.5, 10.0, 13.5], "sum26": 105.5}, {"name": "SM복현", "m26": [9.0, 9.0, 12.0, 8.0, 9.0, 12.0, 9.5, 10.5], "m25": [8.0, 10.0, 7.0, 12.0, 6.5, 7.0, 9.5], "sum26": 79.0}, {"name": "SM화원", "m26": [5.0, 5.0, 5.5, 6.0, 5.5, 8.0, 5.5, 7.0], "m25": [5.5, 7.0, 5.0, 8.5, 2.0, 5.0, 6.5], "sum26": 47.5}, {"name": "라플라타", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 30.0, 30.0], "m25": [0.0, 40.0, 10.0, 40.0, 0.0, 0.0, 0.0], "sum26": 61.0}, {"name": "피터팬 연대점", "m26": [4.0, 24.0, 15.0, 25.0, 20.0, 5.0, 10.0, 15.0], "m25": [10.0, 8.0, 14.0, 19.0, 14.0, 18.0, 6.0], "sum26": 118.0}, {"name": "피터팬 원천점", "m26": [10.0, 9.0, 20.0, 20.0, 10.0, 10.0, 10.0, 6.0], "m25": [7.5, 5.0, 10.5, 10.0, 8.5, 8.5, 10.0], "sum26": 95.0}, {"name": "새라울", "m26": [10.0, 15.0, 15.0, 20.0, 15.0, 25.0, 15.0, 20.0], "m25": [15.0, 10.0, 10.0, 30.0, 10.0, 5.0, 24.0], "sum26": 135.0}, {"name": "일리노 달동점", "m26": [10.0, 10.0, 30.0, 10.0, 20.0, 10.0, 10.0, 10.0], "m25": [0.0, 10.0, 25.0, 17.0, 10.0, 10.0, 10.0], "sum26": 110.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 30.0, 20.0, 20.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 90.0}, {"name": "로아 한동대점", "m26": [0.0, 0.0, 60.0, 0.0, 0.0, 10.0, 0.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 20.0], "sum26": 80.0}, {"name": "로아 서초점", "m26": [0.0, 5.0, 40.0, 0.0, 20.0, 20.0, 30.0, 40.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], "sum26": 155.0}, {"name": "일산 자이안카페", "m26": [2.0, 2.0, 2.0, 4.0, 4.0, 2.0, 4.0, 2.0], "m25": [2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 4.0], "sum26": 22.0}, {"name": "MBC 카페미아", "m26": [0.0, 5.0, 4.0, 6.0, 3.0, 5.0, 6.0, 3.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 32.0}, {"name": "보현산전망대", "m26": [1.0, 1.5, 1.0, 1.5, 2.0, 2.0, 1.5, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.5, 1.5, 1.0], "sum26": 11.5}, {"name": "포항 함께", "m26": [2.0, 0.0, 2.0, 0.0, 1.0, 0.0, 1.0, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 7.0}, {"name": "대잠맨션(장성점)", "m26": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 2.0}, {"name": "빈앤스타", "m26": [3.0, 0.0, 0.0, 1.5, 2.5, 1.5, 1.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 9.5}, {"name": "하울", "m26": [1.0, 0.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 4.5}], "washed": [{"name": "SM월배", "m26": [20.0, 20.0, 20.0, 20.0, 30.0, 30.0, 20.0, 20.0], "m25": [30.0, 20.0, 30.0, 30.0, 20.0, 20.0, 40.0], "sum26": 180.0}, {"name": "SM복현", "m26": [15.0, 15.0, 15.0, 17.5, 20.0, 25.0, 20.0, 25.0], "m25": [20.0, 27.5, 17.5, 27.5, 20.0, 15.0, 15.0], "sum26": 152.5}, {"name": "SM화원", "m26": [10.0, 15.0, 15.0, 10.0, 10.0, 20.0, 20.0, 10.0], "m25": [5.0, 24.0, 15.0, 25.0, 5.0, 10.0, 15.0], "sum26": 110.0}, {"name": "새라울", "m26": [15.0, 20.0, 25.0, 50.0, 35.0, 40.0, 20.0, 61.0], "m25": [15.0, 25.0, 10.0, 40.0, 10.0, 15.0, 20.0], "sum26": 266.0}, {"name": "일리노 달동점", "m26": [10.0, 10.0, 40.0, 10.0, 10.0, 20.0, 10.0, 10.0], "m25": [0.0, 10.0, 20.0, 20.0, 10.0, 10.0, 10.0], "sum26": 120.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 30.0, 10.0, 20.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 80.0}, {"name": "나온김에 커피한잔", "m26": [0.0, 0.0, 2.0, 0.0, 1.0, 2.0, 2.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 7.0}], "natural": [{"name": "피터팬 연대점", "m26": [2.0, 20.0, 15.0, 40.0, 20.0, 10.0, 5.0, 25.0], "m25": [18.0, 2.0, 22.0, 24.0, 22.0, 24.0, 12.0], "sum26": 137.0}, {"name": "피터팬 원천점", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 6.0}, {"name": "로아 한동대점", "m26": [0.0, 10.0, 40.0, 0.0, 10.0, 0.0, 0.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 0.0], "sum26": 70.0}, {"name": "로아 서초점", "m26": [10.0, 20.0, 30.0, 10.0, 20.0, 40.0, 50.0, 40.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0], "sum26": 220.0}, {"name": "포항 함께", "m26": [0.0, 1.0, 1.0, 0.0, 2.0, 0.0, 1.0, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 6.0}]};
-    const FALLBACK_INV = {"updatedAt": "2026-11-10 21:30", "updatedNote": "프롬프트 실시간 공장 창고 재고 연동 완료 (과테말라 3,000kg / 워시드 1,200kg / 내추럴 240kg)", "stock": {"stockGt": 3000, "stockWashed": 1200, "stockNatural": 240, "stockIndia": 650, "stockDecaf": 60, "stockBrazil": 300}, "demand": {"targetMonths": 7.67, "growthPct": 0, "yieldRate": 0.8, "kkosupOthers": 822.3, "laplataKkosup": 250.0, "b2cKkosup": 0.0, "dark": 248.0, "decaf": 171.0, "washed": 131.7, "natural": 62.7}};
+    const FALLBACK_INV = {"updatedAt": "2026-11-10 21:30", "updatedNote": "프롬프트 실시간 공장 창고 재고 연동 완료 (과테말라 3,000kg / 워시드 1,200kg / 내추럴 240kg)", "stock": {"stockGt": 3000, "stockWashed": 1200, "stockNatural": 240, "stockIndia": 650, "stockDecaf": 60, "stockBrazil": 300}, "demand": {"targetMonths": 7.67, "growthPct": 0, "yieldRate": 0.8, "kkosupOthers": 822.3, "laplataKkosup": 250.0, "b2cKkosup": 80.0, "dark": 248.0, "decaf": 171.0, "washed": 131.7, "natural": 62.7}};
 
     const RATIO_MAIN = 5090 / 8400; // 60.60%
     const RATIO_SUB  = 3310 / 8400; // 39.40%
@@ -893,11 +911,12 @@
       yieldRate: 0.80,
       kkosupOthers: 822.3,
       laplataKkosup: 250.0,
-      b2cKkosup: 0.0,
+      b2cKkosup: 80.0,
       dark: 248.0,
       decaf: 171.0,
       washed: 131.7,
       natural: 62.7,
+      b2cNatural: 40.0,
       stockGt: 3000,
       stockWashed: 1200,
       stockNatural: 240,
@@ -952,7 +971,8 @@
         state.yieldRate = parseFloat(params.get('yr')) || 0.80;
         state.kkosupOthers = parseFloat(params.get('ko')) ?? state.kkosupOthers;
         state.laplataKkosup = parseFloat(params.get('lp')) ?? state.laplataKkosup;
-        state.b2cKkosup = parseFloat(params.get('b2c')) ?? 0;
+        state.b2cKkosup = parseFloat(params.get('b2c')) ?? state.b2cKkosup;
+        state.b2cNatural = parseFloat(params.get('b2cn')) ?? state.b2cNatural;
         state.dark = parseFloat(params.get('dk')) ?? state.dark;
         state.decaf = parseFloat(params.get('dc')) ?? state.decaf;
         state.washed = parseFloat(params.get('ws')) ?? state.washed;
@@ -992,6 +1012,8 @@
       setVal('rngWashed', state.washed);
       setVal('numNatural', state.natural);
       setVal('rngNatural', state.natural);
+      setVal('numB2cNatural', state.b2cNatural);
+      setVal('rngB2cNatural', state.b2cNatural);
       setVal('numStockGt', state.stockGt);
       setVal('rngStockGt', state.stockGt);
       setVal('numStockWashed', state.stockWashed);
@@ -1136,7 +1158,9 @@
       const darkRoasted   = state.dark * gMult;
       const decafRoasted  = state.decaf * gMult;
       const washedRoasted = state.washed * gMult;
-      const naturalRoasted= state.natural * gMult;
+      const naturalRoasted= (state.natural * gMult) + (state.b2cNatural || 0);
+      const elNatTot = document.getElementById('lblNaturalFinalMonthly');
+      if (elNatTot) elNatTot.textContent = `총 ${fmtNum(naturalRoasted, 1)} kg/월`;
 
       document.getElementById('lblKkosupFinalMonthly').textContent = `${fmtNum(kkosupRoasted, 1)} kg/월`;
 
@@ -1520,10 +1544,10 @@
           badge: '과테(와이칸) 60.6% + 인도 39.4%',
           roastedM: kkosupRoasted,
           greenM: kkosupGreen,
-          avg8Raw: '1,060.4',
-          m8Raw: '1,103.0',
+          avg8Raw: '1,140.4',
+          m8Raw: '1,183.0',
           sharePct: Math.round((kkosupRoasted / Math.max(1, totalRoastedM)) * 100),
-          subNote: `일반 ${fmtNum(state.kkosupOthers*gMult,0)} + 라플라타 ${fmtNum(state.laplataKkosup*gMult,0)}` + (state.b2cKkosup > 0 ? ` + B2C ${fmtNum(state.b2cKkosup,0)}` : ''),
+          subNote: `B2B ${fmtNum((state.kkosupOthers+state.laplataKkosup)*gMult,0)} + 자사몰·매장 ${fmtNum(state.b2cKkosup,0)}kg`,
           accent: 'border-amber-600 bg-amber-50/40'
         },
         {
@@ -1564,10 +1588,10 @@
           badge: '에티 부쿠사이사 내추럴 100%',
           roastedM: naturalRoasted,
           greenM: naturalMonthly,
-          avg8Raw: '54.9',
-          m8Raw: '76.0',
+          avg8Raw: '94.9',
+          m8Raw: '116.0',
           sharePct: Math.round((naturalRoasted / Math.max(1, totalRoastedM)) * 100),
-          subNote: '최근 로아 서초점 등 수요 급증 추세',
+          subNote: `B2B ${fmtNum(state.natural*gMult,1)} + 자사몰·매장 ${fmtNum(state.b2cNatural,0)}kg`,
           accent: 'border-red-400 bg-red-50/30'
         }
       ];
@@ -1609,8 +1633,8 @@
           roastedEq: gtMonthly * yr,
           curStock: state.stockGt,
           runwayText: `${gtRunway.toFixed(1)}개월분 보유`,
-          avg8Green: '803.2',
-          m8Green: '835.5',
+          avg8Green: '863.8',
+          m8Green: '896.1',
           subNote: `내년 6월말까지 +${fmtNum(gtAdd,0)}kg(${fmtNum(gtAdd/69,0)}백) 추가`,
           accent: 'border-amber-700 bg-amber-50/50',
           stockColor: 'text-emerald-800'
@@ -1623,8 +1647,8 @@
           roastedEq: indiaMonthly * yr,
           curStock: state.stockIndia,
           runwayText: state.stockIndia <= 333.3 ? '🔴 즉시 1톤 발주!' : `1/3선 D-${Math.round(indiaDaysUntil333)}일`,
-          avg8Green: '713.3',
-          m8Green: '719.8',
+          avg8Green: '752.7',
+          m8Green: '759.2',
           subNote: `일 ${fmtNum(indiaDaily,1)}kg 소모 · 1/3남을때 1톤 발주`,
           accent: 'border-amber-500 bg-amber-50/30',
           stockColor: state.stockIndia <= 333.3 ? 'text-red-700' : 'text-amber-900'
@@ -1679,8 +1703,8 @@
           roastedEq: naturalRoasted,
           curStock: state.stockNatural,
           runwayText: `${naturalRunway.toFixed(1)}개월분 (조기소진)`,
-          avg8Green: '68.6',
-          m8Green: '95.0',
+          avg8Green: '118.6',
+          m8Green: '145.0',
           subNote: `27년 2월초 소진 · +${fmtNum(naturalAdd,0)}kg(6백) 추가`,
           accent: 'border-red-500 bg-red-50/40',
           stockColor: 'text-red-700'
@@ -1787,6 +1811,7 @@
         ko: state.kkosupOthers,
         lp: state.laplataKkosup,
         b2c: state.b2cKkosup,
+        b2cn: state.b2cNatural,
         dk: state.dark,
         dc: state.decaf,
         ws: state.washed,
