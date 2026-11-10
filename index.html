@@ -92,6 +92,62 @@
 
   <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-6">
 
+    
+    <!-- 0. FIRST-SCREEN HERO INSIGHT: MONTHLY AVERAGE OUTPUT VS CURRENT STOCK -->
+    <section class="bg-white rounded-2xl border-2 border-stone-800/15 card-shadow overflow-hidden">
+      <div class="bg-gradient-to-r from-[#2b1810] via-[#3d2317] to-[#2b1810] px-4 sm:px-6 py-4 text-white">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span class="inline-block text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-400 text-stone-950 mb-1">
+              💡 첫 화면 핵심 인사이트 (월평균 출고량 vs 현재 창고 재고)
+            </span>
+            <h2 class="text-base sm:text-xl font-extrabold tracking-tight">품목별 월평균 출고량 & 현재고 비교 한눈에 보기</h2>
+            <p class="text-xs text-amber-200/85 mt-0.5">매달 원두·생두가 얼마나 나가고 있고, 지금 창고 재고로 몇 달을 쓸 수 있는지 직관적으로 비교합니다.</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur px-3.5 py-2 rounded-xl border border-white/15 text-right">
+            <div class="text-[11px] text-amber-200">전체 B2B 월평균 출고 규모</div>
+            <div class="text-sm sm:text-base font-extrabold text-white">
+              원두 <span class="text-amber-300" id="heroTotalRoastedM">1,685.7</span> kg/월
+              <span class="mx-1 text-white/40">→</span>
+              생두 <span class="text-emerald-300" id="heroTotalGreenM">2,107.1</span> kg/월
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 space-y-5">
+        <!-- Part A: 5 Roasted Products Monthly Average Output Bar Cards -->
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <h3 class="text-xs sm:text-sm font-extrabold text-stone-800 flex items-center gap-1.5">
+              <span>☕</span>
+              <span>완제품(원두) 5대 품목별 월평균 출고량 & 생두 환산량 (26년 1~8월 실적 기준)</span>
+            </h3>
+            <span class="text-[11px] text-stone-500">*라플라타 리모델링 공백(월 250kg) 정상화 보정 완료</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" id="heroProductCards">
+            <!-- Dynamically populated by JS -->
+          </div>
+        </div>
+
+        <!-- Part B: 6 Green Beans "Monthly Outflow vs Current Stock" Direct Insight Cards -->
+        <div class="pt-4 border-t border-stone-200/80">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <h3 class="text-xs sm:text-sm font-extrabold text-stone-800 flex items-center gap-1.5">
+              <span>📦</span>
+              <span>원재료(생두) 6종: "한 달에 이만큼 나가는데, 현재 창고에 이만큼 있어요" 직관 비교</span>
+            </h3>
+            <span class="text-[11px] font-semibold text-amber-800">아래 슬라이더 조절 시 실시간 연동</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="heroGreenInsightCards">
+            <!-- Dynamically populated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 1. EXECUTIVE KPI CARDS (Top Priority Items) -->
     <section>
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
