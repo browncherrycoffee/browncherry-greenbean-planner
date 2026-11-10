@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>브라운체리 생두 재고 & 구매 시뮬레이터</title>
+  <meta name="description" content="브라운체리(Brown Cherry) 스페셜티 커피 로스터리 원재료(생두) 재고 소진 예측 및 추가 확보량 실시간 시뮬레이션 대시보드" />
+  <meta name="theme-color" content="#2b1810" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body { background-color: #f8f6f3; color: #1c1917; }
+    
+    /* Custom Touch-Friendly Range Sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 10px;
+      background: #e7e2da;
+      border-radius: 999px;
+      outline: none;
+      transition: background 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #7c2d12;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+      cursor: pointer;
+      transition: transform 0.1s ease, background-color 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover,
+    input[type=range]::-webkit-slider-thumb:active {
+      transform: scale(1.12);
+      background: #9a3412;
+    }
+    input[type=range].slider-emerald::-webkit-slider-thumb {
+      background: #047857;
+    }
+    input[type=range].slider-amber::-webkit-slider-thumb {
+      background: #b45309;
+    }
+    input[type=range].slider-indigo::-webkit-slider-thumb {
+      background: #3730a3;
+    }
+    .card-shadow {
+      box-shadow: 0 4px 20px -2px rgba(43, 24, 16, 0.06), 0 2px 6px -1px rgba(43, 24, 16, 0.04);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <!-- Top Sticky Header -->
+  <header class="sticky top-0 z-40 bg-[#2b1810]/95 backdrop-blur-md text-white border-b border-amber-900/40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-red-900 flex items-center justify-center font-extrabold text-lg shadow-inner border border-amber-400/30">
+          BC
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-amber-50">브라운체리 생두 구매 시뮬레이터</h1>
+            <span class="hidden sm:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">실시간 연동</span>
+          </div>
+          <p class="text-xs text-amber-200/80" id="headerSubtitle">2026.11.10 현재고 기준 → 2027.06.30(내년 6월 말) 목표</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons (Mobile & Desktop) -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button onclick="shareCurrentState()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition">
+          <span>🔗</span><span>시뮬레이션 링크 복사</span>
+        </button>
+        <button onclick="saveToLocal()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 active:scale-95 text-amber-100 font-semibold text-xs border border-stone-600 transition">
+          <span>💾</span><span class="hidden sm:inline"> 설정</span><span> 저장</span>
+        </button>
+        <button onclick="resetToDefault()" class="px-2.5 py-1.5 rounded-lg bg-stone-800/80 hover:bg-red-950 text-stone-300 hover:text-red-200 font-medium text-xs border border-stone-700 transition" title="초기 권장값으로 복원">
+          🔄 초기화
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300 bg-stone-900 text-amber-100 px-4 py-3 rounded-xl shadow-2xl border border-amber-500/40 text-sm font-semibold flex items-center gap-2">
+    <span id="toastMsg">저장되었습니다.</span>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-6">
+
+    <!-- 1. EXECUTIVE KPI CARDS (Top Priority Items) -->
+    <section>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-5 rounded-full bg-amber-700"></span>
+          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">핵심 생두 추가 확보량 실시간 요약</h2>
+        </div>
+        <div class="text-xs font-medium text-stone-600 bg-white px-3 py-1 rounded-full border border-stone-200 shadow-sm">
+          목표 기간: <strong class="text-amber-900 font-bold" id="badgeTargetMonths">7.67개월 (내년 6월 말)</strong> · 수율 <strong class="text-amber-900" id="badgeYield">80% (÷0.8)</strong>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        
+        <!-- Card 1: Guatemala (Primary Focus) -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border-2 border-amber-700/80 card-shadow relative overflow-hidden">
+          <div class="absolute top-0 right-0 bg-amber-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-bl-xl">
+            ★ 최우선 관리 (꼬숩 60.6%)
+          </div>
+          <div class="text-xs font-bold text-amber-800 uppercase tracking-wider">과테말라 (Guatemala)</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-stone-900" id="kpiGtAddKg">3,230 kg</span>
+            <span class="text-sm font-bold text-amber-700" id="kpiGtAddTon">(3.23톤)</span>
+          </div>
+          <div class="mt-1 flex items-center justify-between text-xs font-semibold text-stone-600">
+            <span>추가 발주 권장 마대 수:</span>
+            <span class="text-sm font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md" id="kpiGtBags">46.8백 (69kg백)</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="mt-3.5">
+            <div class="flex justify-between text-[11px] font-semibold mb-1">
+              <span class="text-emerald-700" id="kpiGtStockLabel">현재고 3,000kg (3.7개월분)</span>
+              <span class="text-amber-800" id="kpiGtTotalNeedLabel">총 필요 6,230kg</span>
+            </div>
+            <div class="w-full h-3 bg-amber-100 rounded-full overflow-hidden flex">
+              <div id="kpiGtBarStock" class="bg-emerald-600 h-full transition-all duration-200" style="width: 48%"></div>
+              <div id="kpiGtBarAdd" class="bg-amber-500 h-full transition-all duration-200" style="width: 52%"></div>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-stone-500">
+              <span>월 소요: <strong class="text-stone-800" id="kpiGtMonthly">812.2 kg/월</strong></span>
+              <span id="kpiGtRunwayDate" class="font-bold text-red-700">소진 예상: 27년 3월 초</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Ethiopia Natural (Early Depletion Alert) -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-red-300 card-shadow relative overflow-hidden">
+          <div class="absolute top-0 right-0 text-white text-[11px] font-bold px-2.5 py-1 rounded-bl-xl bg-red-600" id="kpiEthNBadge">
+            ⚠️ 조기 소진 주의
+          </div>
+          <div class="text-xs font-bold text-red-800 uppercase tracking-wider">에티오피아 부쿠사이사 내추럴</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-stone-900" id="kpiEthNAddKg">361 kg</span>
+            <span class="text-sm font-bold text-red-700" id="kpiEthNBags">(6.0백 / 60kg)</span>
+          </div>
+          <div class="mt-1 flex items-center justify-between text-xs font-semibold text-stone-600">
+            <span>현재 보유 생두 재고:</span>
+            <span class="font-bold text-stone-800" id="kpiEthNStockVal">240 kg (4.0백)</span>
+          </div>
+
+          <div class="mt-3.5">
+            <div class="flex justify-between text-[11px] font-semibold mb-1">
+              <span class="text-emerald-700" id="kpiEthNStockMonths">현재고 3.1개월분</span>
+              <span class="text-red-800" id="kpiEthNTotalNeed">총 필요 601kg</span>
+            </div>
+            <div class="w-full h-3 bg-red-100 rounded-full overflow-hidden flex">
+              <div id="kpiEthNBarStock" class="bg-emerald-600 h-full transition-all duration-200" style="width: 40%"></div>
+              <div id="kpiEthNBarAdd" class="bg-red-500 h-full transition-all duration-200" style="width: 60%"></div>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-stone-500">
+              <span>월 소요: <strong class="text-stone-800" id="kpiEthNMonthly">78.3 kg/월</strong></span>
+              <span id="kpiEthNRunwayDate" class="font-bold text-red-700">소진 예상: 27년 2월 초</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Ethiopia Washed (Sufficient Stock) -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 card-shadow relative overflow-hidden">
+          <div class="absolute top-0 right-0 text-white text-[11px] font-bold px-2.5 py-1 rounded-bl-xl bg-emerald-700" id="kpiEthWBadge">
+            🟢 현재고 여유
+          </div>
+          <div class="text-xs font-bold text-emerald-800 uppercase tracking-wider">에티오피아 단체 워시드</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-stone-900" id="kpiEthWAddKg">62 kg</span>
+            <span class="text-sm font-bold text-emerald-700" id="kpiEthWBags">(1.0백 / 60kg)</span>
+          </div>
+          <div class="mt-1 flex items-center justify-between text-xs font-semibold text-stone-600">
+            <span>현재 보유 생두 재고:</span>
+            <span class="font-bold text-stone-800" id="kpiEthWStockVal">1,200 kg (1.2톤)</span>
+          </div>
+
+          <div class="mt-3.5">
+            <div class="flex justify-between text-[11px] font-semibold mb-1">
+              <span class="text-emerald-700" id="kpiEthWStockMonths">현재고 7.3개월분</span>
+              <span class="text-stone-700" id="kpiEthWTotalNeed">총 필요 1,262kg</span>
+            </div>
+            <div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden flex">
+              <div id="kpiEthWBarStock" class="bg-emerald-600 h-full transition-all duration-200" style="width: 95%"></div>
+              <div id="kpiEthWBarAdd" class="bg-amber-500 h-full transition-all duration-200" style="width: 5%"></div>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-stone-500">
+              <span>월 소요: <strong class="text-stone-800" id="kpiEthWMonthly">164.6 kg/월</strong></span>
+              <span id="kpiEthWRunwayDate" class="font-bold text-emerald-800">소진 예상: 27년 6월 중순</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Rolling Purchase Items (India, Decaf, Brazil) -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200 card-shadow flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-stone-700 uppercase tracking-wider">수시/롤링 구매 3종 요약</span>
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-stone-100 text-stone-600">정기 발주</span>
+            </div>
+            <div class="mt-3 space-y-2.5 text-xs">
+              <div class="p-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-stone-900">인도 합산 <span class="text-[11px] font-normal text-stone-500">(꼬숩+다크)</span></div>
+                  <div class="text-[11px] text-stone-500">잔여 1/3 시점마다 1톤 구매</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-extrabold text-sm text-amber-900" id="kpiIndiaMonthly">716.0 kg/월</div>
+                  <div class="text-[11px] font-semibold text-stone-600" id="kpiIndiaTotal">기간 총 5,492kg</div>
+                </div>
+              </div>
+
+              <div class="p-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-stone-900">디카페인 <span class="text-[11px] font-normal text-stone-500">(20kg 주별구매)</span></div>
+                  <div class="text-[11px] text-stone-500" id="kpiDecafWeeklyBoxes">주 평균 2.5개 (49.3kg/주)</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-extrabold text-sm text-indigo-900" id="kpiDecafMonthly">213.8 kg/월</div>
+                  <div class="text-[11px] font-semibold text-indigo-700" id="kpiDecafMonthlyBoxes">월 약 10.7개(20kg)</div>
+                </div>
+              </div>
+
+              <div class="p-2 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-stone-900">브라질 <span class="text-[11px] font-normal text-stone-500">(다크 39.4%)</span></div>
+                  <div class="text-[11px] text-stone-500" id="kpiBrazilStockNote">현재고 0kg 차감 후</div>
+                </div>
+                <div class="text-right">
+                  <div class="font-extrabold text-sm text-stone-900" id="kpiBrazilAdd">추가 937 kg</div>
+                  <div class="text-[11px] font-semibold text-stone-600" id="kpiBrazilMonthly">월 122.2kg (15.6백)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. INTERACTIVE SIMULATION CONTROL PANEL (SLIDERS) -->
+    <section class="bg-white rounded-2xl border border-stone-200/90 card-shadow overflow-hidden">
+      <div class="bg-gradient-to-r from-[#2b1810] to-[#432818] px-4 sm:px-6 py-3.5 text-white flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🎛️</span>
+          <div>
+            <h2 class="text-sm sm:text-base font-extrabold">실시간 시뮬레이션 컨트롤 바 (슬라이더 조절)</h2>
+            <p class="text-[11px] text-amber-200/80">바를 좌우로 움직이거나 숫자를 입력하면 확보해야 할 생두량이 즉시 재계산됩니다.</p>
+          </div>
+        </div>
+        <!-- Quick Scenario Preset Buttons -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="applyScenario('avg8')" id="btnScenAvg8" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-100 transition">
+            ① 1~8월 보정평균
+          </button>
+          <button onclick="applyScenario('recent3')" id="btnScenRecent3" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-stone-950 shadow transition">
+            ★ ② 최근 3개월 보정 (권장)
+          </button>
+          <button onclick="applyScenario('peak8')" id="btnScenPeak8" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-100 transition">
+            ③ 8월 피크 기준 (안전)
+          </button>
+          <button onclick="applyScenario('growth10')" id="btnScenGrowth10" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-100 transition">
+            ④ B2C/성장 +10%
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column (7 cols): Target Period, Growth, & Monthly Roasted Output Sliders -->
+        <div class="lg:col-span-7 space-y-5">
+          
+          <!-- Target Period & Global Growth Box -->
+          <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-amber-950 uppercase tracking-wide">STEP 1. 목표 확보 기간 & 전체 성장률/B2C 가산 설정</span>
+              <span class="text-[11px] font-semibold text-amber-800">내년 6월 뉴크롭 입고 기준</span>
+            </div>
+
+            <!-- Target Months Slider -->
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <label class="text-xs sm:text-sm font-bold text-stone-800">
+                  📅 목표 확보 기간 (개월 수)
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="numTargetMonths" step="0.1" min="1" max="18" value="7.67"
+                    oninput="syncFromInput('targetMonths', this.value)"
+                    class="w-20 text-right font-extrabold text-sm px-2 py-1 rounded-lg border border-amber-400 bg-white text-amber-950" />
+                  <span class="text-xs font-bold text-stone-700">개월분</span>
+                </div>
+              </div>
+              <input type="range" id="rngTargetMonths" min="1" max="12" step="0.05" value="7.67"
+                oninput="syncFromSlider('targetMonths', this.value)" />
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                <button onclick="setTargetMonths(4.0)" class="px-2 py-1 text-[11px] font-semibold rounded bg-white border border-stone-300 hover:bg-amber-100">4개월 (단기)</button>
+                <button onclick="setTargetMonths(6.0)" class="px-2 py-1 text-[11px] font-semibold rounded bg-white border border-stone-300 hover:bg-amber-100">6개월 (반기)</button>
+                <button onclick="setTargetMonths(7.67)" class="px-2.5 py-1 text-[11px] font-bold rounded bg-amber-700 text-white shadow-sm">★ 7.67개월 (오늘 11/10~내년 6/30)</button>
+                <button onclick="setTargetMonths(8.0)" class="px-2 py-1 text-[11px] font-semibold rounded bg-white border border-stone-300 hover:bg-amber-100">8개월 (11월~6월 여유)</button>
+                <button onclick="setTargetMonths(10.0)" class="px-2 py-1 text-[11px] font-semibold rounded bg-white border border-stone-300 hover:bg-amber-100">10개월 (9월~6월)</button>
+                <button onclick="setTargetMonths(12.0)" class="px-2 py-1 text-[11px] font-semibold rounded bg-white border border-stone-300 hover:bg-amber-100">12개월 (1년 최대)</button>
+              </div>
+            </div>
+
+            <!-- Overall Growth / B2C Multiplier Slider -->
+            <div class="pt-2 border-t border-amber-200/70">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs sm:text-sm font-bold text-stone-800">
+                  📈 예상 출고 증감률 <span class="text-[11px] font-normal text-stone-500">(신규 거래처 확대 / B2C 소매 가산율)</span>
+                </label>
+                <div class="flex items-center gap-1">
+                  <span class="text-xs font-extrabold px-2 py-0.5 rounded bg-amber-200/80 text-amber-950" id="lblGrowthPct">0% (기본)</span>
+                </div>
+              </div>
+              <input type="range" id="rngGrowthPct" class="slider-amber" min="-30" max="60" step="1" value="0"
+                oninput="syncFromSlider('growthPct', this.value)" />
+              <div class="flex justify-between text-[11px] text-stone-500 mt-1">
+                <span>-30% (비수기/감소)</span>
+                <span class="font-semibold text-stone-700">0% (현재 추세)</span>
+                <span>+30%</span>
+                <span>+60% (급성장)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Expected Roasted Bean Output Sliders -->
+          <div class="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-extrabold text-stone-800 uppercase tracking-wide">STEP 2. 품목별 월 예상 원두 출고량 조절 (단위: 원두 kg/월)</span>
+              <span class="text-[11px] text-stone-500">라플라타 공사 공백 정상화 반영 완료</span>
+            </div>
+
+            <!-- 1) Kkosup (Split into Others + La Plata + B2C) -->
+            <div class="p-3 rounded-xl bg-white border border-stone-200/90 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-1">
+                <div>
+                  <span class="text-sm font-extrabold text-amber-950">① 꼬숩 블랜드 (월 원두 출고량)</span>
+                  <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900">과테말라 60.6% + 인도 39.4%</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs text-stone-500">최종 월 원두: </span>
+                  <strong class="text-base font-extrabold text-amber-900" id="lblKkosupFinalMonthly">1,072.3 kg/월</strong>
+                </div>
+              </div>
+
+              <!-- Kkosup Base (Excluding La Plata) -->
+              <div>
+                <div class="flex justify-between text-xs font-semibold text-stone-700 mb-1">
+                  <span>· 일반 B2B 거래처 합계 <span class="text-stone-400 font-normal">(라플라타 외 19개점)</span></span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numKkosupOthers" step="5" min="200" max="3000" value="822.3"
+                      oninput="syncFromInput('kkosupOthers', this.value)"
+                      class="w-20 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
+                    <span>kg/월</span>
+                  </div>
+                </div>
+                <input type="range" id="rngKkosupOthers" min="400" max="1800" step="5" value="822.3"
+                  oninput="syncFromSlider('kkosupOthers', this.value)" />
+              </div>
+
+              <!-- La Plata Monthly Output Slider -->
+              <div class="pt-2 border-t border-stone-100">
+                <div class="flex justify-between text-xs font-semibold text-amber-900 mb-1">
+                  <span>· ★ 라플라타 월평균 출고량 <span class="text-stone-500 font-normal">(리모델링 완료 정상화 기준)</span></span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numLaplataKkosup" step="10" min="0" max="800" value="250"
+                      oninput="syncFromInput('laplataKkosup', this.value)"
+                      class="w-20 text-right font-extrabold text-xs px-1.5 py-0.5 rounded border border-amber-400 bg-amber-50 text-amber-950" />
+                    <span>kg/월</span>
+                  </div>
+                </div>
+                <input type="range" id="rngLaplataKkosup" class="slider-amber" min="0" max="500" step="10" value="250"
+                  oninput="syncFromSlider('laplataKkosup', this.value)" />
+                <div class="flex justify-between text-[10px] text-stone-400 mt-0.5">
+                  <span>0kg (공사중 왜곡시)</span>
+                  <span class="font-bold text-amber-800">250kg (현재 평균)</span>
+                  <span>470kg (9월 출고량)</span>
+                </div>
+              </div>
+
+              <!-- B2C Additional Kkosup Slider -->
+              <div class="pt-2 border-t border-stone-100">
+                <div class="flex justify-between text-xs font-semibold text-stone-700 mb-1">
+                  <span>· B2C (온라인+오프라인 매장 소매) 추가분</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numB2cKkosup" step="10" min="0" max="1000" value="0"
+                      oninput="syncFromInput('b2cKkosup', this.value)"
+                      class="w-20 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
+                    <span>kg/월</span>
+                  </div>
+                </div>
+                <input type="range" id="rngB2cKkosup" min="0" max="500" step="10" value="0"
+                  oninput="syncFromSlider('b2cKkosup', this.value)" />
+              </div>
+            </div>
+
+            <!-- 2) Dark Choco, Decaf, Washed, Natural Sliders -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              
+              <!-- Dark Choco -->
+              <div class="p-3 rounded-xl bg-white border border-stone-200/90">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-extrabold text-stone-800">② 다크초코 (원두)</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numDark" step="5" min="50" max="1000" value="248.0"
+                      oninput="syncFromInput('dark', this.value)"
+                      class="w-16 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
+                    <span class="text-xs text-stone-600">kg/월</span>
+                  </div>
+                </div>
+                <div class="text-[11px] text-stone-500 mb-1.5">인도 60.6% + 브라질 39.4%</div>
+                <input type="range" id="rngDark" min="100" max="600" step="5" value="248.0"
+                  oninput="syncFromSlider('dark', this.value)" />
+              </div>
+
+              <!-- Decaf -->
+              <div class="p-3 rounded-xl bg-white border border-stone-200/90">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-extrabold text-stone-800">③ 디카페인 (원두)</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numDecaf" step="5" min="20" max="800" value="171.0"
+                      oninput="syncFromInput('decaf', this.value)"
+                      class="w-16 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
+                    <span class="text-xs text-stone-600">kg/월</span>
+                  </div>
+                </div>
+                <div class="text-[11px] text-stone-500 mb-1.5">라플라타 월 30kg 보정 반영 (20kg 주별발주)</div>
+                <input type="range" id="rngDecaf" class="slider-indigo" min="50" max="400" step="2.5" value="171.0"
+                  oninput="syncFromSlider('decaf', this.value)" />
+              </div>
+
+              <!-- Ethiopia Washed -->
+              <div class="p-3 rounded-xl bg-white border border-stone-200/90">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-extrabold text-emerald-900">④ 산미 - 에티 워시드 (원두)</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numWashed" step="2" min="20" max="800" value="131.7"
+                      oninput="syncFromInput('washed', this.value)"
+                      class="w-16 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
+                    <span class="text-xs text-stone-600">kg/월</span>
+                  </div>
+                </div>
+                <div class="text-[11px] text-stone-500 mb-1.5">단체W 등 (최근3개월 131.7 / 8월 136kg)</div>
+                <input type="range" id="rngWashed" class="slider-emerald" min="50" max="350" step="2" value="131.7"
+                  oninput="syncFromSlider('washed', this.value)" />
+              </div>
+
+              <!-- Ethiopia Natural -->
+              <div class="p-3 rounded-xl bg-white border border-stone-200/90">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-extrabold text-red-900">⑤ 산미 - 에티 내추럴 (원두)</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="numNatural" step="2" min="10" max="600" value="62.7"
+                      oninput="syncFromInput('natural', this.value)"
+                      class="w-16 text-right font-bold text-xs px-1.5 py-0.5 rounded border border-stone-300" />
+                    <span class="text-xs text-stone-600">kg/월</span>
+                  </div>
+                </div>
+                <div class="text-[11px] text-stone-500 mb-1.5">부쿠사이사N 등 (최근3개월 62.7 / 8월 76kg)</div>
+                <input type="range" id="rngNatural" min="20" max="250" step="2" value="62.7"
+                  oninput="syncFromSlider('natural', this.value)" />
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column (5 cols): Current Green Bean Inventory Sliders & Yield Settings -->
+        <div class="lg:col-span-5 space-y-5">
+          
+          <div class="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/90 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wide">STEP 3. 현재 보유 생두 재고량 설정 (kg)</span>
+              <span class="text-[11px] font-semibold text-emerald-800">창고 실사 재고 즉시 반영</span>
+            </div>
+
+            <!-- Stock 1: Guatemala -->
+            <div class="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+              <div class="flex justify-between items-center">
+                <div>
+                  <span class="text-xs sm:text-sm font-extrabold text-stone-900">과테말라 현재 재고</span>
+                  <span class="block text-[11px] text-stone-500" id="lblStockGtBags">69kg 마대 기준 약 43.5백</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="numStockGt" step="50" min="0" max="15000" value="3000"
+                    oninput="syncFromInput('stockGt', this.value)"
+                    class="w-24 text-right font-extrabold text-sm px-2 py-1 rounded-lg border-2 border-emerald-500 bg-emerald-50/40 text-stone-900" />
+                  <span class="text-xs font-bold text-stone-700">kg</span>
+                </div>
+              </div>
+              <input type="range" id="rngStockGt" class="slider-emerald" min="0" max="8000" step="50" value="3000"
+                oninput="syncFromSlider('stockGt', this.value)" />
+              <div class="flex flex-wrap gap-1 pt-1">
+                <button onclick="adjustStock('stockGt', -69)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">-1백(69kg)</button>
+                <button onclick="adjustStock('stockGt', 69)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">+1백(69kg)</button>
+                <button onclick="adjustStock('stockGt', -500)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">-500kg</button>
+                <button onclick="adjustStock('stockGt', 500)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">+500kg</button>
+                <button onclick="setStock('stockGt', 3000)" class="ml-auto px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 text-emerald-900">오늘자 3,000kg</button>
+              </div>
+            </div>
+
+            <!-- Stock 2: Ethiopia Washed -->
+            <div class="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+              <div class="flex justify-between items-center">
+                <div>
+                  <span class="text-xs sm:text-sm font-extrabold text-stone-900">에티 단체 워시드 현재 재고</span>
+                  <span class="block text-[11px] text-stone-500" id="lblStockWashedBags">60kg 마대 기준 20.0백 (1.2톤)</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="numStockWashed" step="30" min="0" max="5000" value="1200"
+                    oninput="syncFromInput('stockWashed', this.value)"
+                    class="w-24 text-right font-extrabold text-sm px-2 py-1 rounded-lg border-2 border-emerald-500 bg-emerald-50/40 text-stone-900" />
+                  <span class="text-xs font-bold text-stone-700">kg</span>
+                </div>
+              </div>
+              <input type="range" id="rngStockWashed" class="slider-emerald" min="0" max="3000" step="30" value="1200"
+                oninput="syncFromSlider('stockWashed', this.value)" />
+              <div class="flex flex-wrap gap-1 pt-1">
+                <button onclick="adjustStock('stockWashed', -60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">-1백(60kg)</button>
+                <button onclick="adjustStock('stockWashed', 60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">+1백(60kg)</button>
+                <button onclick="setStock('stockWashed', 1200)" class="ml-auto px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 text-emerald-900">오늘자 1,200kg</button>
+              </div>
+            </div>
+
+            <!-- Stock 3: Ethiopia Natural -->
+            <div class="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+              <div class="flex justify-between items-center">
+                <div>
+                  <span class="text-xs sm:text-sm font-extrabold text-stone-900">에티 부쿠사이사 내추럴 현재 재고</span>
+                  <span class="block text-[11px] text-stone-500" id="lblStockNaturalBags">60kg 마대 기준 4.0백</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="numStockNatural" step="30" min="0" max="3000" value="240"
+                    oninput="syncFromInput('stockNatural', this.value)"
+                    class="w-24 text-right font-extrabold text-sm px-2 py-1 rounded-lg border-2 border-emerald-500 bg-emerald-50/40 text-stone-900" />
+                  <span class="text-xs font-bold text-stone-700">kg</span>
+                </div>
+              </div>
+              <input type="range" id="rngStockNatural" class="slider-emerald" min="0" max="1500" step="20" value="240"
+                oninput="syncFromSlider('stockNatural', this.value)" />
+              <div class="flex flex-wrap gap-1 pt-1">
+                <button onclick="adjustStock('stockNatural', -60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">-1백(60kg)</button>
+                <button onclick="adjustStock('stockNatural', 60)" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-stone-100 hover:bg-stone-200 text-stone-700">+1백(60kg)</button>
+                <button onclick="setStock('stockNatural', 240)" class="ml-auto px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 text-emerald-900">오늘자 240kg</button>
+              </div>
+            </div>
+
+            <!-- Stock 4: Brazil & India Optional Stock -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="p-2.5 rounded-xl bg-white border border-stone-200">
+                <label class="block text-[11px] font-bold text-stone-700 mb-1">브라질 현재 재고(kg)</label>
+                <input type="number" id="numStockBrazil" step="30" min="0" max="5000" value="0"
+                  oninput="syncFromInput('stockBrazil', this.value)"
+                  class="w-full text-right font-bold text-xs px-2 py-1 rounded border border-stone-300" />
+              </div>
+              <div class="p-2.5 rounded-xl bg-white border border-stone-200">
+                <label class="block text-[11px] font-bold text-stone-700 mb-1">인도 현재 재고(kg)</label>
+                <input type="number" id="numStockIndia" step="50" min="0" max="5000" value="0"
+                  oninput="syncFromInput('stockIndia', this.value)"
+                  class="w-full text-right font-bold text-xs px-2 py-1 rounded border border-stone-300" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Roasting Yield & Blend Ratio Box -->
+          <div class="p-4 rounded-xl bg-stone-100 border border-stone-200/90 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-stone-800">⚙️ 로스팅 수율 & 배합비 기준</span>
+              <div class="flex gap-1">
+                <button onclick="setYield(0.80)" id="btnYield80" class="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-800 text-white">수율 80% (÷0.8 표준)</button>
+                <button onclick="setYield(0.8333)" id="btnYield83" class="px-2 py-0.5 text-[11px] font-semibold rounded bg-white border border-stone-300 text-stone-700">배치 83.3% (8.4→7kg)</button>
+              </div>
+            </div>
+            <div class="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+              <div>• <strong>생두 환산 공식</strong>: <code class="bg-white px-1.5 py-0.5 rounded border border-stone-200 font-bold text-amber-900" id="codeFormulaText">필요 생두량 = 생산할 원두량 ÷ 0.80</code></div>
+              <div>• <strong>꼬숩 1배치(8,400g)</strong>: 과테말라 <strong>5,090g (60.60%)</strong> + 인도 <strong>3,310g (39.40%)</strong></div>
+              <div>• <strong>다크초코 1배치(8,400g)</strong>: 인도 <strong>5,090g (60.60%)</strong> + 브라질 <strong>3,310g (39.40%)</strong></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. VISUAL TIMELINE & FULL PROCUREMENT TABLE -->
+    <section class="bg-white rounded-2xl border border-stone-200 card-shadow p-4 sm:p-6 space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">📊 품목별 재고 소진 타임라인 & 전체 원재료 확보 산출표</h2>
+          <p class="text-xs text-stone-500">초록색 바는 현재 보유 재고로 버틸 수 있는 개월 수이며, 주황/빨간색 바는 목표 기간까지 추가로 구매해야 하는 물량입니다.</p>
+        </div>
+      </div>
+
+      <!-- Visual Runway Bars -->
+      <div id="runwayChartContainer" class="space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200/80">
+        <!-- Populated dynamically by JS -->
+      </div>
+
+      <!-- Full Summary Table (Mobile Scrollable) -->
+      <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <table class="w-full text-left border-collapse min-w-[780px]">
+          <thead>
+            <tr class="bg-stone-900 text-amber-50 text-xs uppercase">
+              <th class="py-3 px-3 rounded-tl-xl">생두 품목 (원산지)</th>
+              <th class="py-3 px-3">투입 블렌드 / 비중</th>
+              <th class="py-3 px-3 text-right">월 예상 생두 소요량</th>
+              <th class="py-3 px-3 text-right">현재 보유 재고</th>
+              <th class="py-3 px-3 text-center">현재고 소진 시점</th>
+              <th class="py-3 px-3 text-right" id="thTargetNeed">목표 기간 총 필요량</th>
+              <th class="py-3 px-3 text-right bg-amber-900/60 font-extrabold">순수 추가 확보 필요량</th>
+              <th class="py-3 px-3 text-right rounded-tr-xl">발주 마대/단위 환산</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody" class="divide-y divide-stone-200 text-xs sm:text-sm">
+            <!-- Populated dynamically by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. HISTORICAL B2B CLIENT DATA EXPLORER (2026.01 ~ 2026.08) -->
+    <section class="bg-white rounded-2xl border border-stone-200 card-shadow p-4 sm:p-6 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-extrabold text-stone-900">📋 2026년 1월 ~ 8월 거래처별 B2B 원두 공급 실적 데이터</h2>
+          <p class="text-xs text-stone-500">엑셀 원본 데이터(2026.01~08) 및 거래처별 월평균·최근 추세를 품목별로 확인할 수 있습니다.</p>
+        </div>
+        <!-- Category Tabs -->
+        <div class="flex flex-wrap gap-1.5" id="clientTabButtons">
+          <button onclick="switchClientTab('kkosup')" id="tab_kkosup" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-800 text-white shadow">꼬숩 (20곳)</button>
+          <button onclick="switchClientTab('dark')" id="tab_dark" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">다크초코 (5곳)</button>
+          <button onclick="switchClientTab('decaf')" id="tab_decaf" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">디카페인 (18곳)</button>
+          <button onclick="switchClientTab('washed')" id="tab_washed" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">산미-워시드 (7곳)</button>
+          <button onclick="switchClientTab('natural')" id="tab_natural" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">산미-내추럴 (5곳)</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <table class="w-full text-left border-collapse min-w-[740px] text-xs">
+          <thead>
+            <tr class="bg-stone-100 text-stone-700 border-y border-stone-200 font-bold">
+              <th class="py-2.5 px-3">거래처명</th>
+              <th class="py-2.5 px-2 text-right">26.01</th>
+              <th class="py-2.5 px-2 text-right">26.02</th>
+              <th class="py-2.5 px-2 text-right">26.03</th>
+              <th class="py-2.5 px-2 text-right">26.04</th>
+              <th class="py-2.5 px-2 text-right">26.05</th>
+              <th class="py-2.5 px-2 text-right">26.06</th>
+              <th class="py-2.5 px-2 text-right">26.07</th>
+              <th class="py-2.5 px-2 text-right">26.08</th>
+              <th class="py-2.5 px-3 text-right bg-stone-200/60">1~8월 합계</th>
+              <th class="py-2.5 px-3 text-right">8개월 평균</th>
+              <th class="py-2.5 px-3 text-right bg-amber-50 text-amber-900">최근3개월 평균</th>
+            </tr>
+          </thead>
+          <tbody id="clientTableBody" class="divide-y divide-stone-100">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Embedded B2B Historical Data (2026.01 ~ 2026.08)
+    const B2B_DATA = {"kkosup": [{"name": "SM월배", "m26": [170.0, 90.0, 140.0, 120.0, 120.0, 110.0, 100.0, 120.0], "m25": [150.0, 130.0, 150.0, 180.0, 100.0, 140.0, 150.0], "sum26": 970.0}, {"name": "SM복현", "m26": [80.0, 115.0, 130.0, 120.0, 100.0, 130.0, 100.0, 120.0], "m25": [110.0, 150.0, 120.0, 160.0, 80.0, 80.0, 120.0], "sum26": 895.0}, {"name": "SM화원", "m26": [80.0, 90.0, 90.0, 100.0, 80.0, 100.0, 80.0, 110.0], "m25": [80.0, 100.0, 90.0, 120.0, 70.0, 100.0, 100.0], "sum26": 730.0}, {"name": "라플라타", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 210.0, 240.0], "m25": [100.0, 200.0, 120.0, 310.0, 20.0, 100.0, 0.0], "sum26": 470.0}, {"name": "피터팬 본점", "m26": [10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 30.0, 10.0], "m25": [30.0, 20.0, 10.0, 30.0, 10.0, 10.0, 30.0], "sum26": 130.0}, {"name": "피터팬 연대점", "m26": [30.0, 100.0, 100.0, 190.0, 150.0, 90.0, 50.0, 80.0], "m25": [80.0, 50.0, 80.0, 150.0, 100.0, 130.0, 80.0], "sum26": 790.0}, {"name": "피터팬 원천점", "m26": [60.0, 105.0, 60.0, 90.0, 90.0, 60.0, 90.0, 60.0], "m25": [90.0, 60.0, 90.0, 60.0, 90.0, 70.0, 60.0], "sum26": 615.0}, {"name": "로아 한동대점", "m26": [0.0, 0.0, 150.0, 60.0, 60.0, 30.0, 0.0, 30.0], "m25": [50.0, 0.0, 50.0, 40.0, 90.0, 70.0, 80.0], "sum26": 330.0}, {"name": "로아 서초점", "m26": [0.0, 80.0, 80.0, 70.0, 80.0, 140.0, 140.0, 150.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0], "sum26": 740.0}, {"name": "일산 자이안카페", "m26": [30.0, 30.0, 20.0, 30.0, 30.0, 30.0, 30.0, 30.0], "m25": [30.0, 40.0, 23.0, 20.0, 20.0, 20.0, 30.0], "sum26": 230.0}, {"name": "코야커피", "m26": [10.0, 10.0, 5.0, 10.0, 10.0, 10.0, 0.0, 6.0], "m25": [20.0, 30.0, 20.0, 20.0, 20.0, 30.0, 20.0], "sum26": 61.0}, {"name": "보현산전망대", "m26": [20.0, 30.0, 20.0, 30.0, 30.0, 20.0, 30.0, 30.0], "m25": [20.0, 20.0, 30.0, 70.0, 10.0, 20.0, 30.0], "sum26": 210.0}, {"name": "고성무끼", "m26": [10.0, 25.0, 10.0, 15.0, 25.0, 20.0, 55.0, 60.0], "m25": [15.0, 50.0, 50.0, 40.0, 0.0, 10.0, 20.0], "sum26": 220.0}, {"name": "아마빌레", "m26": [20.0, 30.0, 30.0, 0.0, 30.0, 10.0, 20.0, 10.0], "m25": [20.0, 10.0, 20.0, 50.0, 0.0, 20.0, 30.0], "sum26": 150.0}, {"name": "포항 함께", "m26": [10.0, 10.0, 20.0, 10.0, 20.0, 0.0, 20.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 100.0}, {"name": "나온김에 커피한잔", "m26": [10.0, 5.0, 5.0, 5.0, 10.0, 10.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 65.0}, {"name": "대잠맨션(장성점)", "m26": [15.0, 10.0, 10.0, 7.0, 10.0, 10.0, 10.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 72.0}, {"name": "빈앤스타", "m26": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 80.0}, {"name": "하울", "m26": [6.0, 0.0, 7.0, 8.0, 18.0, 26.0, 13.0, 7.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 85.0}, {"name": "카페미소", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 10.0}], "dark": [{"name": "새라울", "m26": [70.0, 70.0, 60.0, 110.0, 70.0, 120.0, 70.0, 91.0], "m25": [60.0, 50.0, 80.0, 94.0, 70.0, 60.0, 70.0], "sum26": 661.0}, {"name": "일리노 달동점", "m26": [60.0, 60.0, 155.0, 60.0, 90.0, 60.0, 30.0, 30.0], "m25": [0.0, 40.0, 70.0, 90.0, 60.0, 40.0, 60.0], "sum26": 545.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 105.0, 105.0, 70.0, 35.0, 35.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 350.0}, {"name": "코야커피", "m26": [15.0, 10.0, 15.0, 20.0, 30.0, 25.0, 30.0, 35.0], "m25": [10.0, 10.0, 5.0, 10.0, 10.0, 15.0, 10.0], "sum26": 180.0}, {"name": "MBC 카페미아", "m26": [30.0, 38.0, 39.0, 34.0, 27.0, 37.0, 34.0, 42.0], "m25": [30.0, 30.0, 50.0, 35.0, 20.0, 30.0, 30.0], "sum26": 281.0}], "decaf": [{"name": "SM월배", "m26": [13.5, 15.0, 12.5, 11.0, 12.0, 14.5, 13.5, 13.5], "m25": [12.5, 11.0, 11.0, 19.5, 7.5, 10.0, 13.5], "sum26": 105.5}, {"name": "SM복현", "m26": [9.0, 9.0, 12.0, 8.0, 9.0, 12.0, 9.5, 10.5], "m25": [8.0, 10.0, 7.0, 12.0, 6.5, 7.0, 9.5], "sum26": 79.0}, {"name": "SM화원", "m26": [5.0, 5.0, 5.5, 6.0, 5.5, 8.0, 5.5, 7.0], "m25": [5.5, 7.0, 5.0, 8.5, 2.0, 5.0, 6.5], "sum26": 47.5}, {"name": "라플라타", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 30.0, 30.0], "m25": [0.0, 40.0, 10.0, 40.0, 0.0, 0.0, 0.0], "sum26": 61.0}, {"name": "피터팬 연대점", "m26": [4.0, 24.0, 15.0, 25.0, 20.0, 5.0, 10.0, 15.0], "m25": [10.0, 8.0, 14.0, 19.0, 14.0, 18.0, 6.0], "sum26": 118.0}, {"name": "피터팬 원천점", "m26": [10.0, 9.0, 20.0, 20.0, 10.0, 10.0, 10.0, 6.0], "m25": [7.5, 5.0, 10.5, 10.0, 8.5, 8.5, 10.0], "sum26": 95.0}, {"name": "새라울", "m26": [10.0, 15.0, 15.0, 20.0, 15.0, 25.0, 15.0, 20.0], "m25": [15.0, 10.0, 10.0, 30.0, 10.0, 5.0, 24.0], "sum26": 135.0}, {"name": "일리노 달동점", "m26": [10.0, 10.0, 30.0, 10.0, 20.0, 10.0, 10.0, 10.0], "m25": [0.0, 10.0, 25.0, 17.0, 10.0, 10.0, 10.0], "sum26": 110.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 30.0, 20.0, 20.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 90.0}, {"name": "로아 한동대점", "m26": [0.0, 0.0, 60.0, 0.0, 0.0, 10.0, 0.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 20.0], "sum26": 80.0}, {"name": "로아 서초점", "m26": [0.0, 5.0, 40.0, 0.0, 20.0, 20.0, 30.0, 40.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], "sum26": 155.0}, {"name": "일산 자이안카페", "m26": [2.0, 2.0, 2.0, 4.0, 4.0, 2.0, 4.0, 2.0], "m25": [2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 4.0], "sum26": 22.0}, {"name": "MBC 카페미아", "m26": [0.0, 5.0, 4.0, 6.0, 3.0, 5.0, 6.0, 3.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 32.0}, {"name": "보현산전망대", "m26": [1.0, 1.5, 1.0, 1.5, 2.0, 2.0, 1.5, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.5, 1.5, 1.0], "sum26": 11.5}, {"name": "포항 함께", "m26": [2.0, 0.0, 2.0, 0.0, 1.0, 0.0, 1.0, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 7.0}, {"name": "대잠맨션(장성점)", "m26": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 2.0}, {"name": "빈앤스타", "m26": [3.0, 0.0, 0.0, 1.5, 2.5, 1.5, 1.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 9.5}, {"name": "하울", "m26": [1.0, 0.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 4.5}], "washed": [{"name": "SM월배", "m26": [20.0, 20.0, 20.0, 20.0, 30.0, 30.0, 20.0, 20.0], "m25": [30.0, 20.0, 30.0, 30.0, 20.0, 20.0, 40.0], "sum26": 180.0}, {"name": "SM복현", "m26": [15.0, 15.0, 15.0, 17.5, 20.0, 25.0, 20.0, 25.0], "m25": [20.0, 27.5, 17.5, 27.5, 20.0, 15.0, 15.0], "sum26": 152.5}, {"name": "SM화원", "m26": [10.0, 15.0, 15.0, 10.0, 10.0, 20.0, 20.0, 10.0], "m25": [5.0, 24.0, 15.0, 25.0, 5.0, 10.0, 15.0], "sum26": 110.0}, {"name": "새라울", "m26": [15.0, 20.0, 25.0, 50.0, 35.0, 40.0, 20.0, 61.0], "m25": [15.0, 25.0, 10.0, 40.0, 10.0, 15.0, 20.0], "sum26": 266.0}, {"name": "일리노 달동점", "m26": [10.0, 10.0, 40.0, 10.0, 10.0, 20.0, 10.0, 10.0], "m25": [0.0, 10.0, 20.0, 20.0, 10.0, 10.0, 10.0], "sum26": 120.0}, {"name": "일리노 태화점", "m26": [0.0, 0.0, 0.0, 30.0, 10.0, 20.0, 10.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 80.0}, {"name": "나온김에 커피한잔", "m26": [0.0, 0.0, 2.0, 0.0, 1.0, 2.0, 2.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 7.0}], "natural": [{"name": "피터팬 연대점", "m26": [2.0, 20.0, 15.0, 40.0, 20.0, 10.0, 5.0, 25.0], "m25": [18.0, 2.0, 22.0, 24.0, 22.0, 24.0, 12.0], "sum26": 137.0}, {"name": "피터팬 원천점", "m26": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 0.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 6.0}, {"name": "로아 한동대점", "m26": [0.0, 10.0, 40.0, 0.0, 10.0, 0.0, 0.0, 10.0], "m25": [0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 0.0], "sum26": 70.0}, {"name": "로아 서초점", "m26": [10.0, 20.0, 30.0, 10.0, 20.0, 40.0, 50.0, 40.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0], "sum26": 220.0}, {"name": "포항 함께", "m26": [0.0, 1.0, 1.0, 0.0, 2.0, 0.0, 1.0, 1.0], "m25": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "sum26": 6.0}]};
+
+    // Ratio Constants (5,090g / 8,400g & 3,310g / 8,400g)
+    const RATIO_MAIN = 5090 / 8400; // 0.60595238 (60.60%)
+    const RATIO_SUB  = 3310 / 8400; // 0.39404762 (39.40%)
+
+    // Default Recommended State (Today 2026.11.10 -> 2027.06.30 = 7.67 months, Recent 3M Normalized)
+    const DEFAULT_STATE = {
+      targetMonths: 7.67,
+      growthPct: 0,
+      yieldRate: 0.80,
+      kkosupOthers: 822.3,   // Recent 3m avg of non-La Plata stores (826, 788, 853)
+      laplataKkosup: 250.0,  // Normalized La Plata monthly output
+      b2cKkosup: 0.0,
+      dark: 248.0,           // Recent 3m avg (312, 199, 233)
+      decaf: 171.0,          // Recent 3m avg with La Plata 30kg normalized
+      washed: 131.7,         // Recent 3m avg (157, 102, 136)
+      natural: 62.7,         // Recent 3m avg (50, 62, 76)
+      stockGt: 3000,
+      stockWashed: 1200,
+      stockNatural: 240,
+      stockBrazil: 0,
+      stockIndia: 0,
+      activeScenario: 'recent3',
+      activeClientTab: 'kkosup'
+    };
+
+    let state = { ...DEFAULT_STATE };
+
+    // Load state from URL query params or LocalStorage
+    function initState() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('tm')) {
+        state.targetMonths = parseFloat(params.get('tm')) || DEFAULT_STATE.targetMonths;
+        state.growthPct = parseFloat(params.get('gp')) || 0;
+        state.yieldRate = parseFloat(params.get('yr')) || 0.80;
+        state.kkosupOthers = parseFloat(params.get('ko')) ?? DEFAULT_STATE.kkosupOthers;
+        state.laplataKkosup = parseFloat(params.get('lp')) ?? DEFAULT_STATE.laplataKkosup;
+        state.b2cKkosup = parseFloat(params.get('b2c')) ?? 0;
+        state.dark = parseFloat(params.get('dk')) ?? DEFAULT_STATE.dark;
+        state.decaf = parseFloat(params.get('dc')) ?? DEFAULT_STATE.decaf;
+        state.washed = parseFloat(params.get('ws')) ?? DEFAULT_STATE.washed;
+        state.natural = parseFloat(params.get('nt')) ?? DEFAULT_STATE.natural;
+        state.stockGt = parseFloat(params.get('sgt')) ?? DEFAULT_STATE.stockGt;
+        state.stockWashed = parseFloat(params.get('sws')) ?? DEFAULT_STATE.stockWashed;
+        state.stockNatural = parseFloat(params.get('snt')) ?? DEFAULT_STATE.stockNatural;
+        state.stockBrazil = parseFloat(params.get('sbr')) ?? 0;
+        state.stockIndia = parseFloat(params.get('sin')) ?? 0;
+      } else {
+        const saved = localStorage.getItem('bc_greenbean_state_v1');
+        if (saved) {
+          try {
+            state = { ...DEFAULT_STATE, ...JSON.parse(saved) };
+          } catch (e) {}
+        }
+      }
+      syncInputsFromState();
+      recalculateAll();
+      renderClientTable();
+    }
+
+    function syncInputsFromState() {
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      };
+      setVal('numTargetMonths', state.targetMonths);
+      setVal('rngTargetMonths', Math.min(12, state.targetMonths));
+      setVal('rngGrowthPct', state.growthPct);
+      setVal('numKkosupOthers', state.kkosupOthers);
+      setVal('rngKkosupOthers', state.kkosupOthers);
+      setVal('numLaplataKkosup', state.laplataKkosup);
+      setVal('rngLaplataKkosup', state.laplataKkosup);
+      setVal('numB2cKkosup', state.b2cKkosup);
+      setVal('rngB2cKkosup', state.b2cKkosup);
+      setVal('numDark', state.dark);
+      setVal('rngDark', state.dark);
+      setVal('numDecaf', state.decaf);
+      setVal('rngDecaf', state.decaf);
+      setVal('numWashed', state.washed);
+      setVal('rngWashed', state.washed);
+      setVal('numNatural', state.natural);
+      setVal('rngNatural', state.natural);
+      setVal('numStockGt', state.stockGt);
+      setVal('rngStockGt', state.stockGt);
+      setVal('numStockWashed', state.stockWashed);
+      setVal('rngStockWashed', state.stockWashed);
+      setVal('numStockNatural', state.stockNatural);
+      setVal('rngStockNatural', state.stockNatural);
+      setVal('numStockBrazil', state.stockBrazil);
+      setVal('numStockIndia', state.stockIndia);
+    }
+
+    function syncFromSlider(key, val) {
+      state[key] = parseFloat(val) || 0;
+      syncInputsFromState();
+      recalculateAll();
+    }
+
+    function syncFromInput(key, val) {
+      state[key] = parseFloat(val) || 0;
+      const rngMap = {
+        targetMonths: 'rngTargetMonths',
+        kkosupOthers: 'rngKkosupOthers',
+        laplataKkosup: 'rngLaplataKkosup',
+        b2cKkosup: 'rngB2cKkosup',
+        dark: 'rngDark',
+        decaf: 'rngDecaf',
+        washed: 'rngWashed',
+        natural: 'rngNatural',
+        stockGt: 'rngStockGt',
+        stockWashed: 'rngStockWashed',
+        stockNatural: 'rngStockNatural'
+      };
+      if (rngMap[key]) {
+        const rng = document.getElementById(rngMap[key]);
+        if (rng) rng.value = state[key];
+      }
+      recalculateAll();
+    }
+
+    function setTargetMonths(m) {
+      state.targetMonths = m;
+      syncInputsFromState();
+      recalculateAll();
+    }
+
+    function adjustStock(key, delta) {
+      state[key] = Math.max(0, Math.round((state[key] + delta) * 10) / 10);
+      syncInputsFromState();
+      recalculateAll();
+    }
+
+    function setStock(key, val) {
+      state[key] = val;
+      syncInputsFromState();
+      recalculateAll();
+    }
+
+    function setYield(yr) {
+      state.yieldRate = yr;
+      document.getElementById('btnYield80').className = yr === 0.80
+        ? 'px-2 py-0.5 text-[11px] font-bold rounded bg-amber-800 text-white'
+        : 'px-2 py-0.5 text-[11px] font-semibold rounded bg-white border border-stone-300 text-stone-700';
+      document.getElementById('btnYield83').className = yr !== 0.80
+        ? 'px-2 py-0.5 text-[11px] font-bold rounded bg-amber-800 text-white'
+        : 'px-2 py-0.5 text-[11px] font-semibold rounded bg-white border border-stone-300 text-stone-700';
+      document.getElementById('codeFormulaText').textContent = `필요 생두량 = 생산할 원두량 ÷ ${yr.toFixed(2)}`;
+      recalculateAll();
+    }
+
+    function applyScenario(scen) {
+      state.activeScenario = scen;
+      if (scen === 'avg8') {
+        state.kkosupOthers = 810.4;
+        state.laplataKkosup = 250.0;
+        state.dark = 252.1;
+        state.decaf = 167.9;
+        state.washed = 114.4;
+        state.natural = 54.9;
+        state.growthPct = 0;
+      } else if (scen === 'recent3') {
+        state.kkosupOthers = 822.3;
+        state.laplataKkosup = 250.0;
+        state.dark = 248.0;
+        state.decaf = 171.0;
+        state.washed = 131.7;
+        state.natural = 62.7;
+        state.growthPct = 0;
+      } else if (scen === 'peak8') {
+        state.kkosupOthers = 853.0;
+        state.laplataKkosup = 250.0;
+        state.dark = 248.0;
+        state.decaf = 179.5;
+        state.washed = 136.0;
+        state.natural = 76.0;
+        state.growthPct = 0;
+      } else if (scen === 'growth10') {
+        state.kkosupOthers = 822.3;
+        state.laplataKkosup = 250.0;
+        state.dark = 248.0;
+        state.decaf = 171.0;
+        state.washed = 131.7;
+        state.natural = 62.7;
+        state.growthPct = 10;
+      }
+
+      ['Avg8', 'Recent3', 'Peak8', 'Growth10'].forEach(k => {
+        const btn = document.getElementById('btnScen' + k);
+        if (!btn) return;
+        const match = scen.toLowerCase() === k.toLowerCase();
+        btn.className = match
+          ? 'px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-stone-950 shadow transition'
+          : 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-100 transition';
+      });
+
+      syncInputsFromState();
+      recalculateAll();
+    }
+
+    function fmtNum(n, dec = 1) {
+      return Number(n).toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    }
+
+    function getRunwayCalendarText(monthsFromNov10) {
+      if (!isFinite(monthsFromNov10) || monthsFromNov10 <= 0) return '즉시 소진 (재고 없음)';
+      if (monthsFromNov10 > 24) return '2년 이상 여유';
+      // Base date: 2026-11-10
+      const base = new Date(2026, 10, 10);
+      const targetMs = base.getTime() + monthsFromNov10 * 30.4375 * 24 * 3600 * 1000;
+      const d = new Date(targetMs);
+      const yr = String(d.getFullYear()).slice(2);
+      const mo = d.getMonth() + 1;
+      const day = d.getDate();
+      const part = day <= 10 ? '초' : (day <= 20 ? '중순' : '말');
+      return `${yr}년 ${mo}월 ${part} (${monthsFromNov10.toFixed(1)}개월)`;
+    }
+
+    function recalculateAll() {
+      const gMult = 1 + (state.growthPct / 100.0);
+      const yr = state.yieldRate || 0.80;
+      const tm = state.targetMonths || 7.67;
+
+      // Update badges
+      document.getElementById('lblGrowthPct').textContent = (state.growthPct > 0 ? `+${state.growthPct}%` : `${state.growthPct}%`);
+      document.getElementById('badgeTargetMonths').textContent = `${tm}개월분`;
+      document.getElementById('badgeYield').textContent = `${(yr * 100).toFixed(1)}% (÷${yr.toFixed(2)})`;
+      document.getElementById('thTargetNeed').textContent = `목표 기간(${tm}개월) 총 필요량`;
+
+      // Monthly Roasted Bean (kg/month)
+      const kkosupRoasted = (state.kkosupOthers + state.laplataKkosup) * gMult + state.b2cKkosup;
+      const darkRoasted   = state.dark * gMult;
+      const decafRoasted  = state.decaf * gMult;
+      const washedRoasted = state.washed * gMult;
+      const naturalRoasted= state.natural * gMult;
+
+      document.getElementById('lblKkosupFinalMonthly').textContent = `${fmtNum(kkosupRoasted, 1)} kg/월`;
+
+      // Monthly Green Bean Needed (kg/month)
+      const kkosupGreen = kkosupRoasted / yr;
+      const darkGreen   = darkRoasted / yr;
+
+      const gtMonthly      = kkosupGreen * RATIO_MAIN;
+      const indiaKkosupM   = kkosupGreen * RATIO_SUB;
+      const indiaDarkM     = darkGreen * RATIO_MAIN;
+      const indiaMonthly   = indiaKkosupM + indiaDarkM;
+      const brazilMonthly  = darkGreen * RATIO_SUB;
+      const decafMonthly   = decafRoasted / yr;
+      const washedMonthly  = washedRoasted / yr;
+      const naturalMonthly = naturalRoasted / yr;
+
+      // Target Period Total Green Bean Needed
+      const gtTotalNeed      = gtMonthly * tm;
+      const indiaTotalNeed   = indiaMonthly * tm;
+      const brazilTotalNeed  = brazilMonthly * tm;
+      const decafTotalNeed   = decafMonthly * tm;
+      const washedTotalNeed  = washedMonthly * tm;
+      const naturalTotalNeed = naturalMonthly * tm;
+
+      // Net Additional Needed (Subtracting Current Inventory)
+      const gtAdd      = Math.max(0, gtTotalNeed - state.stockGt);
+      const indiaAdd   = Math.max(0, indiaTotalNeed - state.stockIndia);
+      const brazilAdd  = Math.max(0, brazilTotalNeed - state.stockBrazil);
+      const washedAdd  = Math.max(0, washedTotalNeed - state.stockWashed);
+      const naturalAdd = Math.max(0, naturalTotalNeed - state.stockNatural);
+
+      // Runway in Months
+      const gtRunway      = state.stockGt / gtMonthly;
+      const washedRunway  = state.stockWashed / washedMonthly;
+      const naturalRunway = state.stockNatural / naturalMonthly;
+      const brazilRunway  = state.stockBrazil / brazilMonthly;
+
+      // Update Stock Helper Labels
+      document.getElementById('lblStockGtBags').textContent = `69kg 마대 기준 약 ${fmtNum(state.stockGt / 69, 1)}백 (${fmtNum(state.stockGt/1000, 2)}톤)`;
+      document.getElementById('lblStockWashedBags').textContent = `60kg 마대 기준 ${fmtNum(state.stockWashed / 60, 1)}백 (${fmtNum(state.stockWashed/1000, 2)}톤)`;
+      document.getElementById('lblStockNaturalBags').textContent = `60kg 마대 기준 ${fmtNum(state.stockNatural / 60, 1)}백`;
+
+      // Update KPI Card 1: Guatemala
+      document.getElementById('kpiGtAddKg').textContent = `${fmtNum(gtAdd, 0)} kg`;
+      document.getElementById('kpiGtAddTon').textContent = `(${fmtNum(gtAdd / 1000, 2)}톤)`;
+      document.getElementById('kpiGtBags').textContent = `${fmtNum(gtAdd / 69, 1)}백 (69kg백)`;
+      document.getElementById('kpiGtStockLabel').textContent = `현재고 ${fmtNum(state.stockGt, 0)}kg (${gtRunway.toFixed(1)}개월분)`;
+      document.getElementById('kpiGtTotalNeedLabel').textContent = `총 필요 ${fmtNum(gtTotalNeed, 0)}kg`;
+      const gtStockPct = Math.min(100, Math.round((state.stockGt / Math.max(1, gtTotalNeed)) * 100));
+      document.getElementById('kpiGtBarStock').style.width = `${gtStockPct}%`;
+      document.getElementById('kpiGtBarAdd').style.width = `${100 - gtStockPct}%`;
+      document.getElementById('kpiGtMonthly').textContent = `${fmtNum(gtMonthly, 1)} kg/월`;
+      document.getElementById('kpiGtRunwayDate').textContent = `소진: ${getRunwayCalendarText(gtRunway)}`;
+
+      // Update KPI Card 2: Ethiopia Natural
+      document.getElementById('kpiEthNAddKg').textContent = `${fmtNum(naturalAdd, 0)} kg`;
+      document.getElementById('kpiEthNBags').textContent = `(${fmtNum(naturalAdd / 60, 1)}백 / 60kg)`;
+      document.getElementById('kpiEthNStockVal').textContent = `${fmtNum(state.stockNatural, 0)} kg (${fmtNum(state.stockNatural/60, 1)}백)`;
+      document.getElementById('kpiEthNStockMonths').textContent = `현재고 ${naturalRunway.toFixed(1)}개월분`;
+      document.getElementById('kpiEthNTotalNeed').textContent = `총 필요 ${fmtNum(naturalTotalNeed, 0)}kg`;
+      const ethNStockPct = Math.min(100, Math.round((state.stockNatural / Math.max(1, naturalTotalNeed)) * 100));
+      document.getElementById('kpiEthNBarStock').style.width = `${ethNStockPct}%`;
+      document.getElementById('kpiEthNBarAdd').style.width = `${100 - ethNStockPct}%`;
+      document.getElementById('kpiEthNMonthly').textContent = `${fmtNum(naturalMonthly, 1)} kg/월`;
+      document.getElementById('kpiEthNRunwayDate').textContent = `소진: ${getRunwayCalendarText(naturalRunway)}`;
+
+      // Update KPI Card 3: Ethiopia Washed
+      document.getElementById('kpiEthWAddKg').textContent = `${fmtNum(washedAdd, 0)} kg`;
+      document.getElementById('kpiEthWBags').textContent = `(${fmtNum(washedAdd / 60, 1)}백 / 60kg)`;
+      document.getElementById('kpiEthWStockVal').textContent = `${fmtNum(state.stockWashed, 0)} kg (${fmtNum(state.stockWashed/1000, 2)}톤)`;
+      document.getElementById('kpiEthWStockMonths').textContent = `현재고 ${washedRunway.toFixed(1)}개월분`;
+      document.getElementById('kpiEthWTotalNeed').textContent = `총 필요 ${fmtNum(washedTotalNeed, 0)}kg`;
+      const ethWStockPct = Math.min(100, Math.round((state.stockWashed / Math.max(1, washedTotalNeed)) * 100));
+      document.getElementById('kpiEthWBarStock').style.width = `${ethWStockPct}%`;
+      document.getElementById('kpiEthWBarAdd').style.width = `${100 - ethWStockPct}%`;
+      document.getElementById('kpiEthWMonthly').textContent = `${fmtNum(washedMonthly, 1)} kg/월`;
+      document.getElementById('kpiEthWRunwayDate').textContent = `소진: ${getRunwayCalendarText(washedRunway)}`;
+
+      // Update KPI Card 4: India, Decaf, Brazil
+      document.getElementById('kpiIndiaMonthly').textContent = `${fmtNum(indiaMonthly, 1)} kg/월`;
+      document.getElementById('kpiIndiaTotal').textContent = `기간 총 ${fmtNum(indiaTotalNeed, 0)}kg`;
+      const decafWeeklyKg = decafMonthly / 4.333;
+      const decafWeeklyUnits = decafWeeklyKg / 20.0;
+      const decafMonthlyUnits = decafMonthly / 20.0;
+      document.getElementById('kpiDecafMonthly').textContent = `${fmtNum(decafMonthly, 1)} kg/월`;
+      document.getElementById('kpiDecafWeeklyBoxes').textContent = `주 평균 ${fmtNum(decafWeeklyUnits, 1)}개 (${fmtNum(decafWeeklyKg, 1)}kg/주)`;
+      document.getElementById('kpiDecafMonthlyBoxes').textContent = `월 약 ${fmtNum(decafMonthlyUnits, 1)}개(20kg단위)`;
+      document.getElementById('kpiBrazilAdd').textContent = `추가 ${fmtNum(brazilAdd, 0)} kg`;
+      document.getElementById('kpiBrazilMonthly').textContent = `월 ${fmtNum(brazilMonthly, 1)}kg (${fmtNum(brazilAdd/60, 1)}백)`;
+      document.getElementById('kpiBrazilStockNote').textContent = `현재고 ${fmtNum(state.stockBrazil, 0)}kg 차감 후`;
+
+      // Render Visual Runway Chart
+      const runwayItems = [
+        { name: '과테말라 (꼬숩 60.6%)', stock: state.stockGt, monthly: gtMonthly, runway: gtRunway, addKg: gtAdd, bagKg: 69, color: 'bg-amber-500' },
+        { name: '에티 부쿠사이사 내추럴', stock: state.stockNatural, monthly: naturalMonthly, runway: naturalRunway, addKg: naturalAdd, bagKg: 60, color: 'bg-red-500' },
+        { name: '에티 단체 워시드', stock: state.stockWashed, monthly: washedMonthly, runway: washedRunway, addKg: washedAdd, bagKg: 60, color: 'bg-emerald-500' },
+        { name: '브라질 (다크 39.4%)', stock: state.stockBrazil, monthly: brazilMonthly, runway: brazilRunway, addKg: brazilAdd, bagKg: 60, color: 'bg-stone-500' },
+      ];
+
+      const chartHtml = runwayItems.map(item => {
+        const coveredM = Math.min(tm, item.runway);
+        const needM = Math.max(0, tm - coveredM);
+        const covPct = Math.min(100, (coveredM / tm) * 100);
+        const needPct = Math.max(0, 100 - covPct);
+        return `
+          <div class="space-y-1">
+            <div class="flex flex-wrap justify-between text-xs">
+              <span class="font-bold text-stone-800">${item.name}</span>
+              <div class="flex items-center gap-3">
+                <span class="text-emerald-700 font-semibold">현재고 사용: ${item.runway.toFixed(1)}개월</span>
+                <span class="font-extrabold text-amber-900">추가 필요: +${fmtNum(item.addKg, 0)}kg (${fmtNum(item.addKg/item.bagKg, 1)}백)</span>
+              </div>
+            </div>
+            <div class="w-full h-4 bg-stone-200 rounded-full overflow-hidden flex text-[10px] font-bold text-white leading-4">
+              <div class="bg-emerald-600 h-full text-center transition-all duration-200" style="width:${covPct}%">${covPct > 14 ? coveredM.toFixed(1)+'개월' : ''}</div>
+              <div class="${item.color} h-full text-center transition-all duration-200" style="width:${needPct}%">${needPct > 14 ? '+'+needM.toFixed(1)+'개월분 추가' : ''}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('runwayChartContainer').innerHTML = chartHtml;
+
+      // Render Summary Table
+      const tableRows = [
+        {
+          name: '① 과테말라',
+          blend: '꼬숩 블랜드 (60.60%)',
+          monthly: gtMonthly,
+          stock: state.stockGt,
+          runwayText: getRunwayCalendarText(gtRunway),
+          totalNeed: gtTotalNeed,
+          addNeed: gtAdd,
+          unitText: `${fmtNum(gtAdd / 69, 1)}백 (69kg백) / ${fmtNum(gtAdd/1000, 2)}톤`,
+          highlight: true
+        },
+        {
+          name: '② 인도 (합산)',
+          blend: '꼬숩(39.4%) + 다크(60.6%)',
+          monthly: indiaMonthly,
+          stock: state.stockIndia,
+          runwayText: '잔여 1/3 시점마다 1톤 구매',
+          totalNeed: indiaTotalNeed,
+          addNeed: indiaAdd,
+          unitText: `월 1톤 롤링 (기간 총 ${fmtNum(indiaAdd/1000, 2)}톤)`,
+          highlight: false
+        },
+        {
+          name: '   ㄴ 인도 (꼬숩용)',
+          blend: '꼬숩 블랜드 (39.40%)',
+          monthly: indiaKkosupM,
+          stock: 0,
+          runwayText: '-',
+          totalNeed: indiaKkosupM * tm,
+          addNeed: indiaKkosupM * tm,
+          unitText: `월 ${fmtNum(indiaKkosupM, 1)}kg`,
+          sub: true
+        },
+        {
+          name: '   ㄴ 인도 (다크초코용)',
+          blend: '다크초코 블랜드 (60.60%)',
+          monthly: indiaDarkM,
+          stock: 0,
+          runwayText: '-',
+          totalNeed: indiaDarkM * tm,
+          addNeed: indiaDarkM * tm,
+          unitText: `월 ${fmtNum(indiaDarkM, 1)}kg`,
+          sub: true
+        },
+        {
+          name: '③ 에티오피아 부쿠사이사 내추럴',
+          blend: '산미 내추럴 싱글 (100%)',
+          monthly: naturalMonthly,
+          stock: state.stockNatural,
+          runwayText: getRunwayCalendarText(naturalRunway),
+          totalNeed: naturalTotalNeed,
+          addNeed: naturalAdd,
+          unitText: `${fmtNum(naturalAdd / 60, 1)}백 (60kg백)`,
+          highlight: true
+        },
+        {
+          name: '④ 에티오피아 단체 워시드',
+          blend: '산미 워시드 싱글 (100%)',
+          monthly: washedMonthly,
+          stock: state.stockWashed,
+          runwayText: getRunwayCalendarText(washedRunway),
+          totalNeed: washedTotalNeed,
+          addNeed: washedAdd,
+          unitText: `${fmtNum(washedAdd / 60, 1)}백 (60kg백)`,
+          highlight: false
+        },
+        {
+          name: '⑤ 디카페인',
+          blend: '디카페인 싱글 (100%)',
+          monthly: decafMonthly,
+          stock: 0,
+          runwayText: '주 단위 20kg 수시 발주',
+          totalNeed: decafTotalNeed,
+          addNeed: decafTotalNeed,
+          unitText: `주 ${fmtNum(decafWeeklyUnits, 1)}개(${fmtNum(decafWeeklyKg, 0)}kg) / 월 ${fmtNum(decafMonthlyUnits, 1)}개`,
+          highlight: false
+        },
+        {
+          name: '⑥ 브라질',
+          blend: '다크초코 블랜드 (39.40%)',
+          monthly: brazilMonthly,
+          stock: state.stockBrazil,
+          runwayText: state.stockBrazil > 0 ? getRunwayCalendarText(brazilRunway) : '재고 미입력(0kg)',
+          totalNeed: brazilTotalNeed,
+          addNeed: brazilAdd,
+          unitText: `${fmtNum(brazilAdd / 60, 1)}백 (60kg백)`,
+          highlight: false
+        }
+      ];
+
+      const tbodyHtml = tableRows.map(r => {
+        const rowCls = r.sub
+          ? 'bg-stone-50/70 text-stone-500 text-xs'
+          : (r.highlight ? 'bg-amber-50/40 font-semibold text-stone-900' : 'bg-white text-stone-800');
+        return `
+          <tr class="${rowCls} hover:bg-amber-50/80 transition">
+            <td class="py-3 px-3 ${r.sub ? 'pl-6' : 'font-bold'}">${r.name}</td>
+            <td class="py-3 px-3 text-xs">${r.blend}</td>
+            <td class="py-3 px-3 text-right font-semibold">${fmtNum(r.monthly, 1)} kg/월</td>
+            <td class="py-3 px-3 text-right">${r.sub ? '-' : fmtNum(r.stock, 0) + ' kg'}</td>
+            <td class="py-3 px-3 text-center text-xs font-semibold">${r.runwayText}</td>
+            <td class="py-3 px-3 text-right">${fmtNum(r.totalNeed, 1)} kg</td>
+            <td class="py-3 px-3 text-right font-extrabold text-amber-950 bg-amber-100/50">${fmtNum(r.addNeed, 1)} kg</td>
+            <td class="py-3 px-3 text-right font-bold text-stone-800">${r.unitText}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Total Row (excluding sub-rows)
+      const mainRows = tableRows.filter(r => !r.sub);
+      const totMonthly = mainRows.reduce((a, b) => a + b.monthly, 0);
+      const totStock   = mainRows.reduce((a, b) => a + b.stock, 0);
+      const totNeed    = mainRows.reduce((a, b) => a + b.totalNeed, 0);
+      const totAdd     = mainRows.reduce((a, b) => a + b.addNeed, 0);
+
+      const totalTr = `
+        <tr class="bg-stone-100 font-extrabold text-stone-950 border-t-2 border-stone-400">
+          <td class="py-3.5 px-3">전 품목 총계 (중복 제외)</td>
+          <td class="py-3.5 px-3 text-xs">전체 원재료 합산</td>
+          <td class="py-3.5 px-3 text-right">${fmtNum(totMonthly, 1)} kg/월</td>
+          <td class="py-3.5 px-3 text-right">${fmtNum(totStock, 0)} kg</td>
+          <td class="py-3.5 px-3 text-center text-xs">-</td>
+          <td class="py-3.5 px-3 text-right">${fmtNum(totNeed, 1)} kg</td>
+          <td class="py-3.5 px-3 text-right text-amber-950 bg-amber-200/70">${fmtNum(totAdd, 1)} kg (${fmtNum(totAdd/1000, 2)}톤)</td>
+          <td class="py-3.5 px-3 text-right">약 ${fmtNum(totAdd / 60, 1)}백 환산</td>
+        </tr>
+      `;
+      document.getElementById('summaryTableBody').innerHTML = tbodyHtml + totalTr;
+    }
+
+    function switchClientTab(tabKey) {
+      state.activeClientTab = tabKey;
+      ['kkosup', 'dark', 'decaf', 'washed', 'natural'].forEach(k => {
+        const btn = document.getElementById('tab_' + k);
+        if (!btn) return;
+        btn.className = (k === tabKey)
+          ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-800 text-white shadow'
+          : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200';
+      });
+      renderClientTable();
+    }
+
+    function renderClientTable() {
+      const list = B2B_DATA[state.activeClientTab] || [];
+      const mTotals = [0, 0, 0, 0, 0, 0, 0, 0];
+
+      const rowsHtml = list.map(c => {
+        c.m26.forEach((v, idx) => { mTotals[idx] += v; });
+        const sum8 = c.m26.reduce((a, b) => a + b, 0);
+        const avg8 = sum8 / 8.0;
+        const avg3 = (c.m26[5] + c.m26[6] + c.m26[7]) / 3.0;
+        const isLaplata = c.name.includes('라플라타');
+        return `
+          <tr class="${isLaplata ? 'bg-amber-50/70 font-semibold' : 'hover:bg-stone-50'}">
+            <td class="py-2 px-3 font-bold text-stone-800">
+              ${c.name}
+              ${isLaplata ? '<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900">리모델링 완료(월250kg 보정대상)</span>' : ''}
+            </td>
+            ${c.m26.map(v => `<td class="py-2 px-2 text-right ${v === 0 ? 'text-stone-300' : 'text-stone-700'}">${fmtNum(v, 1)}</td>`).join('')}
+            <td class="py-2 px-3 text-right font-bold bg-stone-100/70">${fmtNum(sum8, 1)}</td>
+            <td class="py-2 px-3 text-right text-stone-600">${fmtNum(avg8, 1)}</td>
+            <td class="py-2 px-3 text-right font-bold bg-amber-50/60 text-amber-950">${fmtNum(avg3, 1)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const grandSum = mTotals.reduce((a, b) => a + b, 0);
+      const grandAvg8 = grandSum / 8.0;
+      const grandAvg3 = (mTotals[5] + mTotals[6] + mTotals[7]) / 3.0;
+
+      const footerHtml = `
+        <tr class="bg-stone-200/80 font-extrabold text-stone-900 border-t-2 border-stone-300">
+          <td class="py-2.5 px-3">원본 합계 (${list.length}개 거래처)</td>
+          ${mTotals.map(v => `<td class="py-2.5 px-2 text-right">${fmtNum(v, 1)}</td>`).join('')}
+          <td class="py-2.5 px-3 text-right">${fmtNum(grandSum, 1)}</td>
+          <td class="py-2.5 px-3 text-right">${fmtNum(grandAvg8, 1)}</td>
+          <td class="py-2.5 px-3 text-right text-amber-950">${fmtNum(grandAvg3, 1)}</td>
+        </tr>
+      `;
+      document.getElementById('clientTableBody').innerHTML = rowsHtml + footerHtml;
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastMsg').textContent = msg;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 2800);
+    }
+
+    function saveToLocal() {
+      localStorage.setItem('bc_greenbean_state_v1', JSON.stringify(state));
+      showToast('✅ 현재 시뮬레이션 설정이 이 기기에 저장되었습니다.');
+    }
+
+    function resetToDefault() {
+      localStorage.removeItem('bc_greenbean_state_v1');
+      window.history.replaceState({}, '', window.location.pathname);
+      state = { ...DEFAULT_STATE };
+      syncInputsFromState();
+      setYield(0.80);
+      applyScenario('recent3');
+      showToast('🔄 초기 권장 설정값으로 복원되었습니다.');
+    }
+
+    function shareCurrentState() {
+      const params = new URLSearchParams({
+        tm: state.targetMonths,
+        gp: state.growthPct,
+        yr: state.yieldRate,
+        ko: state.kkosupOthers,
+        lp: state.laplataKkosup,
+        b2c: state.b2cKkosup,
+        dk: state.dark,
+        dc: state.decaf,
+        ws: state.washed,
+        nt: state.natural,
+        sgt: state.stockGt,
+        sws: state.stockWashed,
+        snt: state.stockNatural,
+        sbr: state.stockBrazil,
+        sin: state.stockIndia
+      });
+      const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', `?${params.toString()}`);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showToast('🔗 현재 시뮬레이션 상태가 담긴 공유 링크가 복사되었습니다! 카톡 등에 붙여넣으세요.');
+        });
+      } else {
+        prompt('아래 링크를 복사해 공유하세요:', shareUrl);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initState);
+  </script>
+</body>
+</html>
